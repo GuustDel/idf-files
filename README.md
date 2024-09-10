@@ -51,14 +51,18 @@ This repository contains a web application built with Flask that allows users to
     ```
 
 5. **Run the application**:
-    ```bash
-    python app.py
-    ```
-
-6. **Open your browser and navigate to**:
-
-- The URL will typically be something like `http://localhost:8080/`.
-- Check the terminal output for the exact URL.
+    - On Windows:
+        ```bash
+        run_app.bat
+        ```
+    - On macOS/Linux:
+        ```bash
+        chmod +x run_app.sh
+        ```
+        ```bash
+        ./run_app.sh
+        ```
+    Your default web browser will open and navigate to `http://127.0.0.1:5000`.
 
 ## Configuration
 

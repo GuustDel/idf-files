@@ -1,7 +1,11 @@
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from flask import Flask, render_template, request, redirect, flash, session, send_file, url_for
 from flask_session import Session
-import parse_idf
-import os
+import idf_tool.parse_idf as parse_idf
 import json
 import plotly
 from werkzeug.utils import secure_filename
@@ -303,4 +307,4 @@ def request_entity_too_large(error):
     return redirect(request.url)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(port=5000, debug=True)
