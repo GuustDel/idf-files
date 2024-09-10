@@ -191,15 +191,12 @@ def corrected_component_placements(component_placements, String_names, new_strin
                                 component_long_side = component['coordinates'][2,0]
                                 component_short_side = component['coordinates'][2,1]
                         if component_placement['placement'][3] == 0:
-                            print('component_long_side', component_long_side)
-                            print('component_short_side', component_short_side)
                             corrected_placement = np.array([
                                 round(component_placement['placement'][0] - component_short_side), 
                                 round(component_placement['placement'][1] + component_long_side), 
                                 component_placement['placement'][2], 
                                 -90.0
                             ])
-                            print('corrected_placement', corrected_placement)
                         elif component_placement['placement'][3] == 90.0:
                             corrected_placement = np.array([
                                 round(component_placement['placement'][0] - component_short_side - component_long_side), 
@@ -297,7 +294,6 @@ def regenerate_idf(corrected_component_outlines_lib, corrected_component_placeme
             new_lines += '.END_MECHANICAL' + '\n'
     export_file_path = os.path.join(os.getcwd(), 'submits')
     output_file_path = os.path.join(export_file_path, os.path.basename(file_path))
-    print('output_file_path parse_idf', output_file_path)
     with open(output_file_path, 'w') as outfile:
         outfile.write(new_lines)
     return output_file_path

@@ -11,7 +11,11 @@ import plotly
 from werkzeug.utils import secure_filename
 import numpy as np
 
-app = Flask(__name__)
+app = Flask(
+    __name__, 
+    template_folder=os.path.join(os.path.dirname(__file__), '..', 'templates'),
+    static_folder=os.path.join(os.path.dirname(__file__), '..', 'static')
+    )
 app.secret_key = 'supersecretkey'
 
 app.config['SESSION_TYPE'] = 'filesystem'
@@ -112,7 +116,6 @@ def submit_file():
 
         corrected_component_outlines = parse_idf.corrected_component_outlines(component_outlines = component_outlines, String_names = strings, new_string_names = new_string_names)
         session['corrected_component_outlines'] = corrected_component_outlines
-        print(sbar_checkboxes_180deg)
         corrected_component_placements = parse_idf.corrected_component_placements(component_placements = component_placements, String_names = strings, new_string_names = new_string_names, sbar_checkboxes_180deg = sbar_checkboxes_180deg, corrected_component_outlines = corrected_component_outlines)
         session['corrected_component_placements'] = corrected_component_placements
 
@@ -153,7 +156,6 @@ def export():
         new_string_names = session.get('new_string_names', {})
         output_file_path = parse_idf.export_idf(component_outlines, component_placements, strings, file_path, new_string_names=new_string_names,sbar_checkboxes_180deg=sbar_checkboxes_180deg, sbar_checkboxes_height=sbar_checkboxes_height)
         filename, _ = os.path.splitext(session.get('filename', None))
-        print('output_file_path app.py:', output_file_path)
         return send_file(output_file_path, as_attachment=True, download_name=f'{filename}_output.idf')
     fig_dir = session.get('fig_dir', None)
     return render_template('home.html', fig_dir=fig_dir)
@@ -252,8 +254,6 @@ def preview():
         for component in corrected_component_outlines:
                 component_long_side = component['coordinates'][2,0]
                 component_short_side = component['coordinates'][2,1]
-                print('component_long_side:', component_long_side)
-                print('component_short_side:', component_short_side)
                 
         corrected_component_placements = session.get('corrected_component_placements', {})
         new_file_content = parse_idf.regenerate_idf_file_content(corrected_component_outlines, corrected_component_placements, file_content, sbar_checkboxes_height = sbar_checkboxes_height)
