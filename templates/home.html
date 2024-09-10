@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+{% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul>
+          {% for message in messages %}
+            <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+{% endwith %}
+    
+<h1>IDF Generator</h1>
+{% if graph_json %}
+<div style="padding-top: 122px; padding-bottom: 122px">
+{% else %}
+<div style="padding-top: 322px; padding-bottom: 322px">
+{% endif %}
+
+<form action="/submit" method="post" enctype="multipart/form-data" class="form-container">
+    <div class="input-group mb-3">
+        <input type="file" class="form-control" id="file" name="file">
+        <button type="submit" class="btn btn-outline-primary" id="submitFile">Submit</button>
+    </div>
+</form>
+
+{% if graph_json %}
+  <h4>Uploaded IDF</h4>
+  <div id="plot-container" style="text-align: center;">
+    <div id="plot" style="display: inline-block;"></div>
+  </div>
+  <script>
+    var plot_data = JSON.parse('{{ graph_json | safe }}');
+    var layout = plot_data.layout || {};
+    layout.showlegend = false; // Hide legend
+    layout.margin = { l: 0, r: 0, t: 0, b: 0 }; // Remove margins
+    layout.width = 500; // Set the width of the plot
+    layout.height = 300; // Set the height of the plot
+    layout.paper_bgcolor = '#f0f0f0'; // Set background color of the plot area
+    layout.plot_bgcolor = '#ffffff'; // Set background color of the plotting area
+    var config = {
+        staticPlot: true // Disable pan, zoom, and other interactions
+    };
+    Plotly.newPlot('plot', plot_data.data, layout, config);
+  </script>
+  <form action="/export" method="post">
+    <div style="text-align: center;">
+        <button type="submit" class="btn btn-outline-primary" style="display: block; margin: 10px auto; width: 300px;">Export</button>
+    </div>
+  </form>
+{% endif %}
+ 
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</div>
+{% endblock %}

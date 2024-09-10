@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Observe{% endblock %}
+
+{% block content %}
+<h1>Observe</h1>
+
+<ul class="nav nav-underline justify-content-center">
+    <li class="nav-item">
+        <a class="nav-link {% if section == 'preview' %}active{% endif %}" aria-current="page" href="{{ url_for('preview_src') }}">Preview</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if section == 'visualize' %}active{% endif %}" href="{{ url_for('visualize_src') }}">Visualize</a>
+    </li>
+</ul>
+
+{% if section == 'visualize' %}
+    {% if graph_json %}
+    <div class="plot-container mt-4">
+        <div class="row">
+            <h3>Uploaded Panel</h3>
+            <div id="plot-left" class="plot-item"></div>
+        </div>
+        <div class="row">
+            <h3>Exported Panel</h3>
+            <div id="plot-right" class="plot-item"></div>
+        </div>
+    </div>
+
+    <script>
+        var plot_data = JSON.parse('{{ graph_json | safe }}');
+        var layout = plot_data.layout || {};
+        layout.margin = { l: 0, r: 0, t: 0, b: 0 }; // Remove margins
+        layout.paper_bgcolor = '#f0f0f0'; // Set background color of the plot area
+        layout.legend = {
+            x: 1.1, // Position the legend to the right of the plot
+            y: 1, // Align the legend to the top of the plot
+            xanchor: 'left', // Anchor the legend to the left
+            yanchor: 'top', // Anchor the legend to the top
+        };
+        Plotly.newPlot('plot-left', plot_data.data, plot_data.layout);
+    </script>
+    {% endif %}   
+
+    {% if graph_json2 %}
+    <script>
+        var plot_data = JSON.parse('{{ graph_json2 | safe }}');
+        var layout = plot_data.layout || {};
+        layout.margin = { l: 0, r: 0, t: 0, b: 0 }; // Remove margins
+        layout.paper_bgcolor = '#f0f0f0'; // Set background color of the plot area
+        layout.legend = {
+            x: 1.1, // Position the legend to the right of the plot
+            y: 1, // Align the legend to the top of the plot
+            xanchor: 'left', // Anchor the legend to the left
+            yanchor: 'top', // Anchor the legend to the top
+        };
+        Plotly.newPlot('plot-right', plot_data.data, plot_data.layout);
+    </script>
+    {% endif %} 
+
+{% else %}
+
+    <div class="container mt-4">
+        <div class="grid-container">
+            <div class="col">
+                <h2>Uploaded IDF</h2>
+                <div class="grid-item file-content-container">
+                    <pre>{{ file_content }}</pre>
+                </div>
+            </div>
+            <div class="col">
+                <h2>Exported IDF</h2>
+                <div class="grid-item file-content-container">
+                    <pre>{{ new_file_content }}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endif %}
+{% endblock %}

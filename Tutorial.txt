@@ -1,0 +1,14 @@
+In vscode:
+1. File -> Open folder 
+2. Choose 'Code Bussing' folder
+
+OR
+
+1. Right click in the 'Code Bussing' directory
+2. Open in terminal
+3. Type 'code .'
+
+Once the folder is opened in vscode:
+open app.py and run
+
+
