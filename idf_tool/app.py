@@ -213,8 +213,9 @@ def submit_parameters():
         new_outline_width = request.form.getlist('new_outline_width_dyn')[i]
         new_sbar_data.append((new_sbar_name, new_sbar180deg, new_sbarheight, float(new_placement_x), float(new_placement_y), float(new_placement_z), float(new_outline_height), float(new_outline_width)))
         
-        corrected_component_placements, corrected_component_outlines, sbar_checkboxes_180deg, sbar_checkboxes_height = parse_idf.add_busbar(corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, new_sbar_name, new_sbar180deg, new_sbarheight, new_placement_x, new_placement_y, new_placement_z, new_outline_height, new_outline_width)
-
+    for i in range(len(new_sbar_data)):
+        corrected_component_placements, corrected_component_outlines, sbar_checkboxes_180deg, sbar_checkboxes_height = parse_idf.add_busbar(corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, new_sbar_data[i][0], new_sbar_data[i][1], new_sbar_data[i][2], new_sbar_data[i][3], new_sbar_data[i][4], new_sbar_data[i][5], new_sbar_data[i][6], new_sbar_data[i][7])
+    
     session['new_sbar_data'] = new_sbar_data
     session['corrected_component_placements'] = corrected_component_placements
     session['corrected_component_outlines'] = corrected_component_outlines
@@ -267,7 +268,7 @@ def preview():
         session['new_file_content'] = new_file_content
         fig2 = parse_idf.draw_board(board_outline, corrected_component_outlines, corrected_component_placements)
 
-        graph_json2 = json.dumps(fig2, cls=plotly.utils.PlotlyJSONEncoder)    
+        graph_json2 = json.dumps(fig2, cls=plotly.utils.PlotlyJSONEncoder)
         session['graph_json2'] = graph_json2
         
         return render_template('observe.html', section='preview', file_content=file_content, graph_json=graph_json, graph_json2=graph_json2, new_file_content=new_file_content, fig_dir=fig_dir)
@@ -287,6 +288,30 @@ def manipulate():
     new_sbar_data = session.get('new_sbar_data', [])
 
     return render_template('manipulate.html', manipulate_after_submit_parameters = True, new_sbar_data_length = len(new_sbar_data), strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, sbar_checkboxes_180deg=sbar_checkboxes_180deg, new_string_names=new_string_names, sbar_checkboxes_height=sbar_checkboxes_height, corrected_component_placements= corrected_component_placements, fig_dir=fig_dir, corrected_component_outlines=corrected_component_outlines, new_sbar_data=new_sbar_data)
+
+@app.route('/remove_busbar', methods=['POST'])
+def remove_busbar():
+    new_string_names = session.get('new_string_names', {})
+    sbars = session.get('sbars', [])
+    strings = session.get('strings', [])
+    graph_json = session.get('graph_json', None)
+    sbar_checkboxes_180deg = session.get('sbar_checkboxes_180deg', {})
+    sbar_checkboxes_height = session.get('sbar_checkboxes_height', {})
+    new_sbar_data = session.get('new_sbar_data', [])
+    filename = session.get('filename', None)
+    corrected_component_placements = session.get('corrected_component_placements', None)
+    corrected_component_outlines = session.get('corrected_component_outlines', None)
+    fig_dir = session.get('fig_dir', None)
+
+    print(int(request.form['busbar_id']))
+
+    del corrected_component_outlines[int(request.form['busbar_id'])]
+    del corrected_component_placements[int(request.form['busbar_id'])]
+
+    session['corrected_component_placements'] = corrected_component_placements
+    session['corrected_component_outlines'] = corrected_component_outlines
+
+    return render_template('manipulate.html', manipulate_after_submit_parameters = True, new_sbar_data_length = len(new_sbar_data), new_sbar_data=new_sbar_data, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, sbar_checkboxes_180deg=sbar_checkboxes_180deg, sbar_checkboxes_height=sbar_checkboxes_height, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
 
 @app.route('/preview_src')
 def preview_src():

@@ -93,7 +93,6 @@ def draw_board(board_outline, component_outlines, component_placements):
         for component_placement in component_placements:
             if component_outline['name'] == component_placement['name']:
                 angle = component_placement['placement'][3]
-                print(angle)
                 cos_angle = np.cos(angle * np.pi / 180)
                 sin_angle = np.sin(angle * np.pi / 180)
 
