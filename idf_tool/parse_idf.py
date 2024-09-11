@@ -93,6 +93,7 @@ def draw_board(board_outline, component_outlines, component_placements):
         for component_placement in component_placements:
             if component_outline['name'] == component_placement['name']:
                 angle = component_placement['placement'][3]
+                print(angle)
                 cos_angle = np.cos(angle * np.pi / 180)
                 sin_angle = np.sin(angle * np.pi / 180)
 
@@ -318,18 +319,23 @@ def regenerate_idf_file_content(corrected_component_outlines_lib, corrected_comp
         new_lines += f'{corrected_component_placement["placement"][0]} {corrected_component_placement["placement"][1]} {corrected_component_placement["placement"][2]} {corrected_component_placement["placement"][3]} TOP PLACED\n'
     new_lines += '.END_PLACEMENT' + '\n'
     for corrected_component_outline in corrected_component_outlines_lib:
-        new_lines += '.MECHANICAL' + '\n'
         if corrected_component_outline['component_type'] == 'busbar':
             if sbar_checkboxes_height[corrected_component_outline['name']]:
                 busbar_height = 2.3
             else:
                 busbar_height = 0.3
+            new_lines += '.MECHANICAL' + '\n'
             new_lines += f'"{corrected_component_outline["name"]}" "{corrected_component_outline["component_type"]}" MM {busbar_height}\n'
-        else:
+            for coordinate in corrected_component_outline['coordinates']:
+                new_lines += f'0 {coordinate[0]} {coordinate[1]} {coordinate[2]}\n'
+            new_lines += '.END_MECHANICAL' + '\n'
+    for corrected_component_outline in corrected_component_outlines_lib:
+        if corrected_component_outline['component_type'] != 'busbar':
+            new_lines += '.MECHANICAL' + '\n'
             new_lines += f'"{corrected_component_outline["name"]}" "{corrected_component_outline["component_type"]}" MM 1.0\n'
-        for coordinate in corrected_component_outline['coordinates']:
-            new_lines += f'0 {coordinate[0]} {coordinate[1]} {coordinate[2]}\n'
-        new_lines += '.END_MECHANICAL' + '\n'
+            for coordinate in corrected_component_outline['coordinates']:
+                new_lines += f'0 {coordinate[0]} {coordinate[1]} {coordinate[2]}\n'
+            new_lines += '.END_MECHANICAL' + '\n'
     return new_lines
 
 def export_idf(component_outlines, component_placements, String_names, filepath, new_string_names, sbar_checkboxes_180deg, sbar_checkboxes_height):
@@ -361,14 +367,16 @@ def get_coordinates(file_path):
             sbars.append(component_outline['name'])
     return board_outline_data, component_outlines_data, component_placements_data, unique_strings, sbars
 
-def add_busbar(busbar_name, outline, placement, corrected_component_outlines, corrected_component_placements):
-    corrected_component_outlines.append({'name': busbar_name, 'component_type': 'busbar', 'coordinates': outline})
-    corrected_component_placements.append({'name': busbar_name, 'component_type': 'busbar', 'placement': placement})
-    return corrected_component_placements, corrected_component_outlines
-
-def create_new_busbar_data(new_sbar_names, new_sbar180degs, new_sbarheights, new_placement_xs, new_placement_ys, new_placement_zs, new_outline_lengths, new_outline_widths):
-    new_busbars = {}
-    return new_busbars
-
+def add_busbar(corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, new_sbar_name, new_sbar180deg, new_sbarheight, new_placement_x, new_placement_y, new_placement_z, new_outline_height, new_outline_width):
+    outline = np.array([[0.0, 0.0, 0.0], [float(new_outline_width), 0.0, 0.0], [float(new_outline_width), float(new_outline_height), 0.0], [0.0, float(new_outline_height), 0.0], [0.0, 0.0, 0.0]])
+    if new_sbar180deg:
+        placement = np.array([float(new_placement_x), float(new_placement_y), float(new_placement_z), 180.0])
+    else:
+        placement = np.array([float(new_placement_x), float(new_placement_y), float(new_placement_z), 0.0])
+    corrected_component_outlines.append({'name': new_sbar_name, 'component_type': 'busbar', 'coordinates': outline})
+    corrected_component_placements.append({'name': new_sbar_name, 'component_type': 'busbar', 'placement': placement})
+    sbar_checkboxes_180deg[new_sbar_name] = new_sbar180deg
+    sbar_checkboxes_height[new_sbar_name] = new_sbarheight
+    return corrected_component_placements, corrected_component_outlines, sbar_checkboxes_180deg, sbar_checkboxes_height
 
 

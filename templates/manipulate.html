@@ -41,10 +41,10 @@
                     <span>z</span>
                 </div>
                 <div class="col">
-                    <span>length</span>
+                    <span>width</span>
                 </div>
                 <div class="col">
-                    <span>width</span>
+                    <span>height</span>
                 </div>
             </div>
             {% if sbars %}            
@@ -85,6 +85,38 @@
                     
                 </div>
                 {% endfor %}
+
+                {% if manipulate_after_submit_parameters %}
+                    {% for i in range(new_sbar_data_length) %}
+                    <div class="row mb-2">
+                        <div class="col">
+                            <input type="text" style="width: 200px;" class="form-control" name="new_sbar_name" placeholder="Enter name" value="{{ new_sbar_data[i][0] }}">
+                        </div>
+                        <div class="col">
+                            <input type="checkbox" name="new_sbar180deg" {% if new_sbar_data[i][1] %}checked{% endif %}>
+                        </div>
+                        <div class="col">
+                            <input type="checkbox" name="new_sbarheight" {% if new_sbar_data[i][2] %}checked{% endif %}>
+                        </div>
+                        <div class="col">
+                            <input type="number" class="form-control" name="new_placement_x" placeholder="Enter x" step="any" value="{{ new_sbar_data[i][3] }}">
+                        </div>
+                        <div class="col">
+                            <input type="number" class="form-control" name="new_placement_y" placeholder="Enter y" step="any" value="{{ new_sbar_data[i][4] }}">
+                        </div>
+                        <div class="col">
+                            <input type="number" class="form-control" name="new_placement_z" placeholder="Enter z" step="any" value="{{ new_sbar_data[i][5] }}">
+                        </div>
+                        <div class="col">
+                            <input type="number" class="form-control" name="new_outline_length" placeholder="Enter width" step="any" value="{{ new_sbar_data[i][6] }}">
+                        </div>
+                        <div class="col">
+                            <input type="number" class="form-control" name="new_outline_width" placeholder="Enter height" step="any" value="{{ new_sbar_data[i][7] }}">
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+
                 <div class="row mb-2" id="existing-rows"></div>
             {% endif %}
             <div class="col">
@@ -106,7 +138,13 @@
                     event.preventDefault();
                 }
             }
-        
+            
+            function convertToFloat(input) {
+                if (!isNaN(parseFloat(input.value))) {
+                    input.value = parseFloat(input.value).toFixed(1); // Format to 1 decimal place
+                }
+            }
+
             // Function to add event listener to all relevant input fields
             function addEnterKeyPrevention() {
                 document.querySelectorAll('input[type="text"], input[type="checkbox"], input[type="number"]').forEach(input => {
@@ -114,44 +152,65 @@
                     input.addEventListener('keydown', preventEnterKeySubmission);
                 });
             }
+
+            function addFloatConversion() {
+                document.querySelectorAll('input[type="number"]').forEach(input => {
+                    input.addEventListener('blur', function() {
+                        convertToFloat(input);
+                    });
+                });
+            }
         
             // Initial call to add event listener to all existing input fields
             addEnterKeyPrevention();
+            addFloatConversion();
+
         
             // Add event listener to dynamically added rows
             document.getElementById('add-row-btn').addEventListener('click', function() {
+                const existingRows = document.getElementById('existing-rows').children.length;
+                console.log(existingRows);
                 const newRow = document.createElement('div');
                 newRow.className = 'row mb-2';
                 newRow.innerHTML = `
                     <div class="col">
-                        <input type="text" style="width: 200px;" class="form-control" name="new_sbar_name" placeholder="Enter name">
+                        <input type="text" style="width: 200px;" class="form-control" name="new_sbar_name_dyn" placeholder="Enter name">
                     </div>
                     <div class="col">
-                        <input type="checkbox" name="new_sbar180deg">
+                        <input type="checkbox" name="new_sbar180deg_${existingRows}">
                     </div>
                     <div class="col">
-                        <input type="checkbox" name="new_sbarheight">
+                        <input type="checkbox" name="new_sbarheight_${existingRows}">
                     </div>
                     <div class="col">
-                        <input type="number" class="form-control" name="new_placement_x" placeholder="Enter x">
+                        <input type="number" class="form-control" name="new_placement_x_dyn" placeholder="Enter x" step="any">
                     </div>
                     <div class="col">
-                        <input type="number" class="form-control" name="new_placement_y" placeholder="Enter y">
+                        <input type="number" class="form-control" name="new_placement_y_dyn" placeholder="Enter y" step="any">
                     </div>
                     <div class="col">
-                        <input type="number" class="form-control" name="new_placement_z" placeholder="Enter z">
+                        <input type="number" class="form-control" name="new_placement_z_dyn" placeholder="Enter z" step="any">
                     </div>
                     <div class="col">
-                        <input type="number" class="form-control" name="new_outline_length" placeholder="Enter length">
+                        <input type="number" class="form-control" name="new_outline_length_dyn" placeholder="Enter width" step="any">
                     </div>
                     <div class="col">
-                        <input type="number" class="form-control" name="new_outline_width" placeholder="Enter width">
+                        <input type="number" class="form-control" name="new_outline_width_dyn" placeholder="Enter height" step="any">
                     </div>
                 `;
                 document.getElementById('existing-rows').appendChild(newRow);
-        
+
                 // Add event listener to the new input fields
                 addEnterKeyPrevention();
+                addFloatConversion();
+            });
+
+            // Add event listener to the form submission
+            document.querySelector('form').addEventListener('submit', function(event) {
+                // Convert numeric input values to floats
+                document.querySelectorAll('input[type="number"]').forEach(input => {
+                    input.value = parseFloat(input.value);
+                });
             });
             
             document.getElementById('remove-row-btn').addEventListener('click', function() {

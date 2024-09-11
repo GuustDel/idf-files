@@ -12,7 +12,7 @@ from werkzeug.utils import secure_filename
 import numpy as np
 
 app = Flask(
-    __name__, 
+    __name__,
     template_folder=os.path.join(os.path.dirname(__file__), '..', 'templates'),
     static_folder=os.path.join(os.path.dirname(__file__), '..', 'static')
     )
@@ -200,21 +200,28 @@ def submit_parameters():
     session['corrected_component_placements'] = corrected_component_placements
     session['corrected_component_outlines'] = corrected_component_outlines
     
-    new_sbar_names = request.form.getlist('new_sbar_name')
-    new_sbar180degs = request.form.getlist('new_sbar180deg')
-    new_sbarheights = request.form.getlist('new_sbarheight')
-    new_placement_xs = request.form.getlist('new_placement_x')
-    new_placement_ys = request.form.getlist('new_placement_y')
-    new_placement_zs = request.form.getlist('new_placement_z')
-    new_outline_lengths = request.form.getlist('new_outline_length')
-    new_outline_widths = request.form.getlist('new_outline_width')
+    new_sbar_data = session.get('new_sbar_data', [])
+    
+    for i in range(len(request.form.getlist('new_sbar_name_dyn'))):
+        new_sbar_name = request.form.getlist('new_sbar_name_dyn')[i]
+        new_sbar180deg = bool(request.form.get(f'new_sbar180deg_{i}', False))
+        new_sbarheight = bool(request.form.get(f'new_sbarheight_{i}', False))
+        new_placement_x = request.form.getlist('new_placement_x_dyn')[i]
+        new_placement_y = request.form.getlist('new_placement_y_dyn')[i]
+        new_placement_z = request.form.getlist('new_placement_z_dyn')[i]
+        new_outline_height = request.form.getlist('new_outline_length_dyn')[i]
+        new_outline_width = request.form.getlist('new_outline_width_dyn')[i]
+        new_sbar_data.append((new_sbar_name, new_sbar180deg, new_sbarheight, float(new_placement_x), float(new_placement_y), float(new_placement_z), float(new_outline_height), float(new_outline_width)))
+        
+        corrected_component_placements, corrected_component_outlines, sbar_checkboxes_180deg, sbar_checkboxes_height = parse_idf.add_busbar(corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, new_sbar_name, new_sbar180deg, new_sbarheight, new_placement_x, new_placement_y, new_placement_z, new_outline_height, new_outline_width)
 
-    new_busbars = parse_idf.create_new_busbar_data(new_sbar_names, new_sbar180degs, new_sbarheights, new_placement_xs, new_placement_ys, new_placement_zs, new_outline_lengths, new_outline_widths)
+    session['new_sbar_data'] = new_sbar_data
+    session['corrected_component_placements'] = corrected_component_placements
+    session['corrected_component_outlines'] = corrected_component_outlines
+    session['sbar_checkboxes_180deg'] = sbar_checkboxes_180deg
+    session['sbar_checkboxes_height'] = sbar_checkboxes_height
 
-    for new_busbar in new_busbars:
-        corrected_component_placements, corrected_component_outlines = parse_idf.add_new_busbar(new_busbar['name'], new_busbar['outline'], new_busbar['placement'], corrected_component_outlines, corrected_component_placements)
-
-    return render_template('manipulate.html', strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, sbar_checkboxes_180deg=sbar_checkboxes_180deg, sbar_checkboxes_height=sbar_checkboxes_height, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
+    return render_template('manipulate.html', manipulate_after_submit_parameters = True, new_sbar_data_length = len(new_sbar_data), new_sbar_data=new_sbar_data, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, sbar_checkboxes_180deg=sbar_checkboxes_180deg, sbar_checkboxes_height=sbar_checkboxes_height, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
 
 
 @app.route('/observe_src')
@@ -274,11 +281,12 @@ def manipulate():
     sbar_checkboxes_180deg = session.get('sbar_checkboxes_180deg', {})
     sbar_checkboxes_height = session.get('sbar_checkboxes_height', {})
     new_string_names = session.get('new_string_names', {})
-    corrected_component_placements = session.get('corrected_component_placements', None)   
+    corrected_component_placements = session.get('corrected_component_placements', None)
     corrected_component_outlines = session.get('corrected_component_outlines', None)
     fig_dir = session.get('fig_dir', None)
- 
-    return render_template('manipulate.html', strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, sbar_checkboxes_180deg=sbar_checkboxes_180deg, new_string_names=new_string_names, sbar_checkboxes_height=sbar_checkboxes_height, corrected_component_placements= corrected_component_placements, fig_dir=fig_dir, corrected_component_outlines=corrected_component_outlines)
+    new_sbar_data = session.get('new_sbar_data', [])
+
+    return render_template('manipulate.html', manipulate_after_submit_parameters = True, new_sbar_data_length = len(new_sbar_data), strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, sbar_checkboxes_180deg=sbar_checkboxes_180deg, new_string_names=new_string_names, sbar_checkboxes_height=sbar_checkboxes_height, corrected_component_placements= corrected_component_placements, fig_dir=fig_dir, corrected_component_outlines=corrected_component_outlines, new_sbar_data=new_sbar_data)
 
 @app.route('/preview_src')
 def preview_src():
