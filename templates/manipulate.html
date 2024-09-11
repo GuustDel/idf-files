@@ -48,12 +48,11 @@
                 </div>
             </div>
             {% if sbars %}   
-            {% set latestBusbarId1 = 0 %}    
                 {% for sbar in sbars %}
                 {% set BusbarId1 = loop.index0 %}
                 <div class="row mb-2">
                     <div class="col">
-                        <button type="submit" class="btn btn-danger" onclick="removeBusbar('{{ BusbarId1 }}')">
+                        <button type="submit" class="btn btn-danger" onclick="removeBusbar('{{ BusbarId1 }}', 1)">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
                                 <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"/>
                             </svg>
@@ -91,19 +90,17 @@
                             {% endfor %}
                         {% endif %}
                         
-                    {% endfor %}
-                    {% set latestBusbarId1 = BusbarId1 %}    
+                    {% endfor %} 
                 </div>
                 {% endfor %}
 
+
                 {% if manipulate_after_submit_parameters %}
-                {% set latestBusbarId2 = 0 %}
                     {% for i in range(new_sbar_data_length) %}
                     {% set BusbarId2 = loop.index0 %}
-                    <p>latestBusbarId1: {{ latestBusbarId1 }}</p>
                     <div class="row mb-2">
                         <div class="col">
-                            <button type="submit" class="btn btn-danger" onclick="removeBusbar('{{ latestBusbarId1+BusbarId2+1 }}')">
+                            <button type="submit" class="btn btn-danger" onclick="removeBusbar('{{ BusbarId2+1 }}', 2)">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
                                     <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"/>
                                 </svg>
@@ -134,7 +131,6 @@
                             <input type="number" class="form-control" name="new_outline_width" placeholder="Enter height" step="any" value="{{ new_sbar_data[i][7] }}">
                         </div>
                     </div>
-                    {% set latestBusbarId2 = BusbarId2 %}
                     {% endfor %}
                 {% endif %}
 
@@ -147,12 +143,16 @@
     </div>
     <button type="submit" class="btn btn-outline-primary" id="submit-btn">Submit Parameters</button>
 
+    <input type="hidden" id="latestBusbarId1" value="{{ latestBusbarId1 }}">
+    <input type="hidden" id="latestBusbarId2" value="{{ latestBusbarId2 }}">
+
     <script>
-        function removeBusbar(busbarId) {
-                console.log('Removing busbar:', busbarId);
+        function removeBusbar(busbarId, IdNr) {
+                console.log('Removing busbar:', busbarId, IdNr);
                 // Create a form data object
                 const formData = new FormData();
                 formData.append('busbar_id', busbarId);
+                formData.append('IdNr', IdNr);
 
                 // Send a POST request to /remove_busbar
                 fetch('/remove_busbar', {
@@ -210,11 +210,12 @@
             document.getElementById('add-row-btn').addEventListener('click', function() {
                 const existingRows = document.getElementById('existing-rows').children.length;
                 console.log(existingRows);
+
                 const newRow = document.createElement('div');
                 newRow.className = 'row mb-2';
                 newRow.innerHTML = `
                     <div class="col">
-                        <button type="submit" class="btn btn-danger" onclick="removeBusbar('{{ latestBusbarId1+latestBusbarId2+${existingRows}+1 }}')">
+                        <button type="submit" class="btn btn-danger" onclick="removeBusbar(${existingRows}, 3)">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
                                 <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"/>
                             </svg>

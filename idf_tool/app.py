@@ -303,10 +303,23 @@ def remove_busbar():
     corrected_component_outlines = session.get('corrected_component_outlines', None)
     fig_dir = session.get('fig_dir', None)
 
-    print(int(request.form['busbar_id']))
+    IdNr = request.form['IdNr']
+    if IdNr == 1:
+        busbarId = int(request.form['busbar_id'])
+        del corrected_component_outlines[busbarId]
+        del corrected_component_placements[busbarId]
+        print('test')
+    elif IdNr == 2:
+        busbarId = int(request.form['busbar_id']) + len(sbars)
+        del corrected_component_outlines[busbarId]
+        del corrected_component_placements[busbarId]
+        print(busbarId)
+    elif IdNr == 3:
+        busbarId = int(request.form['busbar_id']) + len(sbars) + len(new_sbar_data)
+        del corrected_component_outlines[busbarId]
+        del corrected_component_placements[busbarId]
+        print(busbarId)
 
-    del corrected_component_outlines[int(request.form['busbar_id'])]
-    del corrected_component_placements[int(request.form['busbar_id'])]
 
     session['corrected_component_placements'] = corrected_component_placements
     session['corrected_component_outlines'] = corrected_component_outlines
