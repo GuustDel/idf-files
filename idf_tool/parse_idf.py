@@ -372,7 +372,14 @@ def add_busbar(corrected_component_outlines, corrected_component_placements, sba
         placement = np.array([float(new_placement_x), float(new_placement_y), float(new_placement_z), 180.0])
     else:
         placement = np.array([float(new_placement_x), float(new_placement_y), float(new_placement_z), 0.0])
-    corrected_component_outlines.append({'name': new_sbar_name, 'component_type': 'busbar', 'coordinates': outline})
+    
+    insert_index = len(corrected_component_outlines)  
+    for i, corrected_component_outline in enumerate(corrected_component_outlines):
+        if corrected_component_outline['component_type'] == 'string':
+            insert_index = i
+            break
+
+    corrected_component_outlines.insert(insert_index, {'name': new_sbar_name, 'component_type': 'busbar', 'coordinates': outline})
     corrected_component_placements.append({'name': new_sbar_name, 'component_type': 'busbar', 'placement': placement})
     sbar_checkboxes_180deg[new_sbar_name] = new_sbar180deg
     sbar_checkboxes_height[new_sbar_name] = new_sbarheight

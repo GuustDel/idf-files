@@ -3,7 +3,7 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from flask import Flask, render_template, request, redirect, flash, session, send_file, url_for
+from flask import Flask, render_template, request, redirect, flash, session, send_file, url_for, jsonify
 from flask_session import Session
 import idf_tool.parse_idf as parse_idf
 import json
@@ -48,13 +48,12 @@ def home():
     if new_string_names is None:
         new_string_names = {string: '' for string in strings}
 
-    fig_dir = session.get('fig_dir', None)
+    fig_dir = url_for('static', filename='img/Soltech_logo.png')
     return render_template('home.html', strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, sbar_checkboxes_180deg=sbar_checkboxes_180deg, new_string_names=new_string_names, sbar_checkboxes_height=sbar_checkboxes_height, fig_dir=fig_dir)
 
 @app.route('/')
 def base():
     fig_dir = url_for('static', filename='img/Soltech_logo.png')
-    session['fig_dir'] = fig_dir
     return render_template('home.html', fig_dir=fig_dir)
 
 @app.route('/submit', methods=['POST'])
@@ -123,7 +122,7 @@ def submit_file():
         file.seek(0)
         file_content = file.read().decode('utf-8')
         session['file_content'] = file_content
-        fig_dir = session.get('fig_dir', None)
+        fig_dir = url_for('static', filename='img/Soltech_logo.png')
         return render_template('home.html', strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, sbar_checkboxes_180deg=sbar_checkboxes_180deg, new_string_names=new_string_names, sbar_checkboxes_height=sbar_checkboxes_height, fig_dir=fig_dir)
     else:
         flash('Invalid file type')
@@ -157,7 +156,7 @@ def export():
         output_file_path = parse_idf.export_idf(component_outlines, component_placements, strings, file_path, new_string_names=new_string_names,sbar_checkboxes_180deg=sbar_checkboxes_180deg, sbar_checkboxes_height=sbar_checkboxes_height)
         filename, _ = os.path.splitext(session.get('filename', None))
         return send_file(output_file_path, as_attachment=True, download_name=f'{filename}_output.idf')
-    fig_dir = session.get('fig_dir', None)
+    fig_dir = url_for('static', filename='img/Soltech_logo.png')
     return render_template('home.html', fig_dir=fig_dir)
 
 @app.route('/submit_parameters', methods=['POST'])
@@ -177,13 +176,16 @@ def submit_parameters():
     session['sbar_checkboxes_180deg'] = sbar_checkboxes_180deg
     session['sbar_checkboxes_height'] = sbar_checkboxes_height
     session['new_string_names'] = new_string_names
-    fig_dir = session.get('fig_dir', None)
+    fig_dir = url_for('static', filename='img/Soltech_logo.png')
     corrected_component_placements = session.get('corrected_component_placements', None)
 
-    corrected_component_outlines = parse_idf.corrected_component_outlines(component_outlines = component_outlines, String_names = strings, new_string_names = new_string_names)
 
-    corrected_component_placements = parse_idf.corrected_component_placements(component_placements = component_placements, String_names = strings, new_string_names = new_string_names, sbar_checkboxes_180deg = sbar_checkboxes_180deg, corrected_component_outlines=corrected_component_outlines)
+    # corrected_component_outlines = parse_idf.corrected_component_outlines(component_outlines = component_outlines, String_names = strings, new_string_names = new_string_names)
+
+    # corrected_component_placements = parse_idf.corrected_component_placements(component_placements = component_placements, String_names = strings, new_string_names = new_string_names, sbar_checkboxes_180deg = sbar_checkboxes_180deg, corrected_component_outlines=corrected_component_outlines)
     
+    corrected_component_outlines = session.get('corrected_component_outlines', None)
+
     # for placement in corrected_component_placements:
     #     name = placement['name']
     #     placement['placement'][0] = float(request.form.get(f'placement_{name}_0', placement['placement'][0]))
@@ -197,8 +199,8 @@ def submit_parameters():
     #     outline['coordinates'][2, 1] = float(request.form.get(f'outline_{name}_1', outline['coordinates'][2, 1]))
     #     outline['coordinates'][3, 1] = float(request.form.get(f'outline_{name}_1', outline['coordinates'][2, 1]))
     
-    session['corrected_component_placements'] = corrected_component_placements
-    session['corrected_component_outlines'] = corrected_component_outlines
+    # session['corrected_component_placements'] = corrected_component_placements
+    # session['corrected_component_outlines'] = corrected_component_outlines
     
     new_sbar_data = session.get('new_sbar_data', [])
     
@@ -221,6 +223,8 @@ def submit_parameters():
     session['corrected_component_outlines'] = corrected_component_outlines
     session['sbar_checkboxes_180deg'] = sbar_checkboxes_180deg
     session['sbar_checkboxes_height'] = sbar_checkboxes_height
+
+    print("after submit \n", corrected_component_outlines)
 
     return render_template('manipulate.html', manipulate_after_submit_parameters = True, new_sbar_data_length = len(new_sbar_data), new_sbar_data=new_sbar_data, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, sbar_checkboxes_180deg=sbar_checkboxes_180deg, sbar_checkboxes_height=sbar_checkboxes_height, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
 
@@ -250,10 +254,9 @@ def preview():
     fig = parse_idf.draw_board(board_outline, component_outlines, component_placements)
 
     graph_json = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
-    fig_dir = session.get('fig_dir', None)
+    fig_dir = url_for('static', filename='img/Soltech_logo.png')
 
     new_string_names = session.get('new_string_names', {})
-    fig_dir = session.get('fig_dir', None)
     if new_string_names == {}:
         new_file_content = ''
         return render_template('observe.html', file_content=file_content, graph_json=graph_json, new_file_content=new_file_content, fig_dir=fig_dir)
@@ -264,6 +267,7 @@ def preview():
                 component_short_side = component['coordinates'][2,1]
                 
         corrected_component_placements = session.get('corrected_component_placements', {})
+        # print(corrected_component_placements)
         new_file_content = parse_idf.regenerate_idf_file_content(corrected_component_outlines, corrected_component_placements, file_content, sbar_checkboxes_height = sbar_checkboxes_height)
         session['new_file_content'] = new_file_content
         fig2 = parse_idf.draw_board(board_outline, corrected_component_outlines, corrected_component_placements)
@@ -284,7 +288,7 @@ def manipulate():
     new_string_names = session.get('new_string_names', {})
     corrected_component_placements = session.get('corrected_component_placements', None)
     corrected_component_outlines = session.get('corrected_component_outlines', None)
-    fig_dir = session.get('fig_dir', None)
+    fig_dir = url_for('static', filename='img/Soltech_logo.png')
     new_sbar_data = session.get('new_sbar_data', [])
 
     return render_template('manipulate.html', manipulate_after_submit_parameters = True, new_sbar_data_length = len(new_sbar_data), strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, sbar_checkboxes_180deg=sbar_checkboxes_180deg, new_string_names=new_string_names, sbar_checkboxes_height=sbar_checkboxes_height, corrected_component_placements= corrected_component_placements, fig_dir=fig_dir, corrected_component_outlines=corrected_component_outlines, new_sbar_data=new_sbar_data)
@@ -301,24 +305,37 @@ def remove_busbar():
     filename = session.get('filename', None)
     corrected_component_placements = session.get('corrected_component_placements', None)
     corrected_component_outlines = session.get('corrected_component_outlines', None)
-    fig_dir = session.get('fig_dir', None)
+    fig_dir = url_for('static', filename='img/Soltech_logo.png')
 
     IdNr = request.form['IdNr']
-    if IdNr == 1:
+    if IdNr == "1":
         busbarId = int(request.form['busbar_id'])
-        del corrected_component_outlines[busbarId]
-        del corrected_component_placements[busbarId]
-        print('test')
-    elif IdNr == 2:
+        print(busbarId)
+        print(len(strings))
+        del corrected_component_outlines[int(busbarId)]
+        counter = 0
+        for i, corrected_component_placement in enumerate(corrected_component_placements):
+            if corrected_component_placement['component_type'] == 'busbar':
+                if counter == busbarId:
+                    del corrected_component_placements[i]
+                    break
+                counter += 1
+        del sbars[int(busbarId)]
+    elif IdNr == "2":
         busbarId = int(request.form['busbar_id']) + len(sbars)
-        del corrected_component_outlines[busbarId]
-        del corrected_component_placements[busbarId]
-        print(busbarId)
-    elif IdNr == 3:
-        busbarId = int(request.form['busbar_id']) + len(sbars) + len(new_sbar_data)
-        del corrected_component_outlines[busbarId]
-        del corrected_component_placements[busbarId]
-        print(busbarId)
+        del corrected_component_outlines[int(busbarId)]
+        counter = 0
+        for i, corrected_component_placement in enumerate(corrected_component_placements):
+            if corrected_component_placement['component_type'] == 'busbar':
+                if counter == busbarId:
+                    del corrected_component_placements[i]
+                    break
+                counter += 1
+        print("after_del \n", corrected_component_outlines)
+        del new_sbar_data[int(busbarId) - len(sbars)]
+    elif IdNr == "3":
+        busbarId = int(request.form['busbar_id'])
+        return jsonify({'removeRow': busbarId})
 
 
     session['corrected_component_placements'] = corrected_component_placements
@@ -330,7 +347,7 @@ def remove_busbar():
 def preview_src():
     file_content = session.get('file_content', 'No file content found')
     new_file_content = session.get('new_file_content', 'No new file content found')
-    fig_dir = session.get('fig_dir', None)
+    fig_dir = url_for('static', filename='img/Soltech_logo.png')
 
     return render_template('observe.html', section='preview', file_content=file_content, new_file_content=new_file_content, fig_dir=fig_dir)
 
@@ -338,12 +355,12 @@ def preview_src():
 def visualize_src():
     graph_json2 = session.get('graph_json2', None)
     graph_json = session.get('graph_json', None)
-    fig_dir = session.get('fig_dir', None)
+    fig_dir = url_for('static', filename='img/Soltech_logo.png')
     return render_template('observe.html', section='visualize', graph_json=graph_json, graph_json2=graph_json2, fig_dir=fig_dir)
 
 @app.route('/about_src')
 def about():
-    fig_dir = session.get('fig_dir', None)
+    fig_dir = url_for('static', filename='img/Soltech_logo.png')
     return render_template('about.html', fig_dir=fig_dir)
 
 
