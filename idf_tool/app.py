@@ -224,7 +224,7 @@ def submit_parameters():
     session['sbar_checkboxes_180deg'] = sbar_checkboxes_180deg
     session['sbar_checkboxes_height'] = sbar_checkboxes_height
 
-    print("after submit \n", corrected_component_outlines)
+    print('submit_parameters')
 
     return render_template('manipulate.html', manipulate_after_submit_parameters = True, new_sbar_data_length = len(new_sbar_data), new_sbar_data=new_sbar_data, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, sbar_checkboxes_180deg=sbar_checkboxes_180deg, sbar_checkboxes_height=sbar_checkboxes_height, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
 
@@ -310,8 +310,8 @@ def remove_busbar():
     IdNr = request.form['IdNr']
     if IdNr == "1":
         busbarId = int(request.form['busbar_id'])
-        print(busbarId)
-        print(len(strings))
+        # print(busbarId)
+        # print(len(strings))
         del corrected_component_outlines[int(busbarId)]
         counter = 0
         for i, corrected_component_placement in enumerate(corrected_component_placements):
@@ -331,7 +331,7 @@ def remove_busbar():
                     del corrected_component_placements[i]
                     break
                 counter += 1
-        print("after_del \n", corrected_component_outlines)
+        # print("after_del \n", corrected_component_outlines)
         del new_sbar_data[int(busbarId) - len(sbars)]
     elif IdNr == "3":
         busbarId = int(request.form['busbar_id'])
@@ -340,7 +340,7 @@ def remove_busbar():
 
     session['corrected_component_placements'] = corrected_component_placements
     session['corrected_component_outlines'] = corrected_component_outlines
-
+    print('remove_busbar')
     return render_template('manipulate.html', manipulate_after_submit_parameters = True, new_sbar_data_length = len(new_sbar_data), new_sbar_data=new_sbar_data, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, sbar_checkboxes_180deg=sbar_checkboxes_180deg, sbar_checkboxes_height=sbar_checkboxes_height, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
 
 @app.route('/preview_src')

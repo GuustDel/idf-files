@@ -52,7 +52,7 @@
                 {% set BusbarId1 = loop.index0 %}
                 <div class="row mb-2">
                     <div class="col">
-                        <button type="submit" class="btn btn-danger" onclick="removeBusbar('{{ BusbarId1 }}', 1)">
+                        <button type="button" class="btn btn-danger" onclick="removeBusbar('{{ BusbarId1 }}', 1)">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
                                 <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"/>
                             </svg>
@@ -100,7 +100,7 @@
                     {% set BusbarId2 = loop.index0 %}
                     <div class="row mb-2">
                         <div class="col">
-                            <button type="submit" class="btn btn-danger" onclick="removeBusbar('{{ BusbarId2 }}', 2)">
+                            <button type="button" class="btn btn-danger" onclick="removeBusbar('{{ BusbarId2 }}', 2)">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
                                     <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"/>
                                 </svg>
@@ -141,17 +141,24 @@
             </div>
         </fieldset>
     </div>
-    <button type="submit" class="btn btn-outline-primary" id="submit-btn">Submit Parameters</button>
+    <button type="button" class="btn btn-outline-primary" id="submit-btn">Submit Parameters</button>
 
     <script>
         function removeBusbar(busbarId, IdNr) {
-                console.log('Removing busbar:', busbarId, IdNr);
-                // Create a form data object
-                const formData = new FormData();
-                formData.append('busbar_id', busbarId);
-                formData.append('IdNr', IdNr);
+            console.log('Removing busbar:', busbarId, IdNr);
 
-                // Send a POST request to /remove_busbar
+            // Create a form data object
+            const form = document.querySelector('form');
+            const formData = new FormData(form);
+            formData.append('busbar_id', busbarId);
+            formData.append('IdNr', IdNr);
+            
+
+            // Function to handle the removal of the busbar
+            function executeRemoveBusbar(updatedIdNr) {
+                console.log('Executing remove busbar with updated IdNr:', updatedIdNr);
+                formData.set('IdNr', updatedIdNr); // Update IdNr in formData
+
                 fetch('/remove_busbar', {
                     method: 'POST',
                     body: formData
@@ -166,9 +173,27 @@
                 }).catch(error => {
                     console.error('Error:', error);
                 });
+            }
+
+            // First fetch /submit_parameters
+            fetch('/submit_parameters', {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    console.log('Parameters submitted successfully');
+                    // If IdNr is 3, change it to 2 before removing the busbar
+                    const updatedIdNr = (IdNr === 3) ? 2 : IdNr;
+                    executeRemoveBusbar(updatedIdNr);
+                } else {
+                    console.error('Failed to submit parameters');
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+            });
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {            
             // Function to prevent form submission on Enter key press in input fields
             function preventEnterKeySubmission(event) {
                 if (event.key === 'Enter') {
@@ -178,7 +203,7 @@
             
             function convertToFloat(input) {
                 if (!isNaN(parseFloat(input.value))) {
-                    input.value = parseFloat(input.value).toFixed(1); // Format to 1 decimal place
+                    input.value = parseFloat(input.value).toFixed(1);
                 }
             }
 
@@ -212,7 +237,7 @@
                 newRow.className = 'row mb-2';
                 newRow.innerHTML = `
                     <div class="col">
-                        <button type="submit" class="btn btn-danger" onclick="removeBusbar(${existingRows}, 3)">
+                        <button type="button" class="btn btn-danger" onclick="removeBusbar(${existingRows}, 3)">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
                                 <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"/>
                             </svg>
@@ -257,6 +282,33 @@
                 }
             }
 
+            document.getElementById('submit-btn').addEventListener('click', function(event) {
+                // Create a form data object
+                const form = document.querySelector('form');
+                const formData = new FormData(form);
+
+                // Send a POST request to /submit_parameters
+                fetch('/submit_parameters', {
+                    method: 'POST',
+                    body: formData
+                }).then(response => {
+                    if (response.ok) {
+                        // Handle successful submission, e.g., redirect to another page or update the UI
+                        console.log('Form submitted successfully');
+                        // Optionally, you can redirect to another page
+                        location.reload();
+                    } else {
+                        // Handle errors
+                        console.error('Failed to submit form');
+                    }
+                }).catch(error => {
+                    console.error('Error:', error);
+                });
+
+                // Prevent the default form submission
+                event.preventDefault();
+            });
+
             // Add event listener to the form submission
             document.querySelector('form').addEventListener('submit', function(event) {
                 // Convert numeric input values to floats
@@ -265,30 +317,7 @@
                 });
             });
             
-            document.getElementById('submit-btn').addEventListener('click', function(event) {
-                const sbarNameInput = document.getElementById('sbar-name-input');
-                if (sbarNameInput.value.trim() === '') {
-                    event.preventDefault();
-                    document.getElementById('error-message').style.display = 'block';
-                } else {
-                    sbarNameInput.value = 'sbar' + sbarNameInput.value;
-                }
-        
-                const newRows = document.querySelectorAll('#existing-rows .row');
-                let allFieldsFilled = true;
-                newRows.forEach(row => {
-                    const inputs = row.querySelectorAll('input[type="text"], input[type="number"]');
-                    inputs.forEach(input => {
-                        if (!input.value) {
-                            allFieldsFilled = false;
-                        }
-                    });
-                });
-                if (!allFieldsFilled) {
-                    event.preventDefault();
-                    document.getElementById('error-message').style.display = 'block';
-                }
-            });
+            
         });
     </script>
 </form>
