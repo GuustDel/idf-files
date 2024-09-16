@@ -214,7 +214,7 @@ def submit_parameters():
         new_outline_height = request.form.getlist('new_outline_length_dyn')[i]
         new_outline_width = request.form.getlist('new_outline_width_dyn')[i]
         new_sbar_data.append((new_sbar_name, new_sbar180deg, new_sbarheight, float(new_placement_x), float(new_placement_y), float(new_placement_z), float(new_outline_height), float(new_outline_width)))
-        
+    
     for i in range(len(new_sbar_data)):
         corrected_component_placements, corrected_component_outlines, sbar_checkboxes_180deg, sbar_checkboxes_height = parse_idf.add_busbar(corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, new_sbar_data[i][0], new_sbar_data[i][1], new_sbar_data[i][2], new_sbar_data[i][3], new_sbar_data[i][4], new_sbar_data[i][5], new_sbar_data[i][6], new_sbar_data[i][7])
     

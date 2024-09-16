@@ -9,6 +9,7 @@ This repository contains a web application built with Flask that allows users to
 - **File Validation**: Ensures that only valid IDF files are uploaded.
 - **Correct IDF Files**: Automatically correct IDF files from the SunEwat tool to ensure compatibility with the SolTech Bussing machine.
 - **Modify IDF File Content**: Modify IDF files by rotating busbars 180 degrees or adding soldering pads under busbars (providing a z offset of 2mm).
+- **Add/Remove Busbar Components**: Add new busbar components to the IDF files or remove existing ones.
 - **Rename Strings**: Change the names of strings to make them recognizable by the production team.
 - **Data Visualization**: Visualize data from IDF files using Plotly.
 - **Export Processed Files**: Save processed files to the server and provide users with a download link to download the IDF files to their local machine.
@@ -16,7 +17,6 @@ This repository contains a web application built with Flask that allows users to
 - **File Security**: Securely handles file uploads using Werkzeug.
 
 ### Beta Features
-- **Add Busbar Components**: Add new busbar components to the IDF files.
 - **Change Location/Dimensions of Busbars**: Modify the location and dimensions of existing busbars.
 
 ### Future Features
