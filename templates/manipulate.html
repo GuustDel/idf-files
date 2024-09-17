@@ -96,7 +96,7 @@
 
 
                 {% if manipulate_after_submit_parameters %}
-                    {% for i in range(new_sbar_data_length) %}
+                    {% for sbar in front_end_sbar_data %}
                     {% set BusbarId2 = loop.index0 %}
                     <div class="row mb-2">
                         <div class="col">
@@ -107,28 +107,28 @@
                             </button>
                         </div>
                         <div class="col">
-                            <input type="text" style="width: 200px;" class="form-control" name="new_sbar_name" placeholder="Enter name" value="{{ new_sbar_data[i][0] }}">
+                            <input type="text" style="width: 200px;" class="form-control" name="new_sbar_name" placeholder="Enter name" value="{{ sbar[0] }}">
                         </div>
                         <div class="col">
-                            <input type="checkbox" name="new_sbar180deg" {% if new_sbar_data[i][1] %}checked{% endif %}>
+                            <input type="checkbox" name="new_sbar180deg" {% if sbar[1] %}checked{% endif %}>
                         </div>
                         <div class="col">
-                            <input type="checkbox" name="new_sbarheight" {% if new_sbar_data[i][2] %}checked{% endif %}>
+                            <input type="checkbox" name="new_sbarheight" {% if sbar[2] %}checked{% endif %}>
                         </div>
                         <div class="col">
-                            <input type="number" class="form-control" name="new_placement_x" placeholder="Enter x" step="any" value="{{ new_sbar_data[i][3] }}">
+                            <input type="number" class="form-control" name="new_placement_x" placeholder="Enter x" step="any" value="{{ sbar[3] }}">
                         </div>
                         <div class="col">
-                            <input type="number" class="form-control" name="new_placement_y" placeholder="Enter y" step="any" value="{{ new_sbar_data[i][4] }}">
+                            <input type="number" class="form-control" name="new_placement_y" placeholder="Enter y" step="any" value="{{ sbar[4] }}">
                         </div>
                         <div class="col">
-                            <input type="number" class="form-control" name="new_placement_z" placeholder="Enter z" step="any" value="{{ new_sbar_data[i][5] }}">
+                            <input type="number" class="form-control" name="new_placement_z" placeholder="Enter z" step="any" value="{{ sbar[5] }}">
                         </div>
                         <div class="col">
-                            <input type="number" class="form-control" name="new_outline_length" placeholder="Enter width" step="any" value="{{ new_sbar_data[i][6] }}">
+                            <input type="number" class="form-control" name="new_outline_length" placeholder="Enter width" step="any" value="{{ sbar[6] }}">
                         </div>
                         <div class="col">
-                            <input type="number" class="form-control" name="new_outline_width" placeholder="Enter height" step="any" value="{{ new_sbar_data[i][7] }}">
+                            <input type="number" class="form-control" name="new_outline_width" placeholder="Enter height" step="any" value="{{ sbar[7] }}">
                         </div>
                     </div>
                     {% endfor %}

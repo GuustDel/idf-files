@@ -29,26 +29,22 @@ function removeBusbar(busbarId, IdNr) {
     }
 
     // First fetch /submit_parameters
-    if (IdNr === 3) {
-        fetch('/submit_parameters', {
-            method: 'POST',
-            body: formData
-        }).then(response => {
-            if (response.ok) {
-                console.log('Parameters submitted successfully');
-                // If IdNr is 3, change it to 2 before removing the busbar
-                const updatedIdNr = (IdNr === 3) ? 2 : IdNr;
-                executeRemoveBusbar(updatedIdNr);
-            } else {
-                console.error('Failed to submit parameters');
-            }
-        }).catch(error => {
-            console.error('Error:', error);
-        });
-    } else {
-        const updatedIdNr = IdNr;
-        executeRemoveBusbar(updatedIdNr);
-    }
+    fetch('/submit_parameters', {
+        method: 'POST',
+        body: formData
+    }).then(response => {
+        if (response.ok) {
+            console.log('Parameters submitted successfully');
+            // If IdNr is 3, change it to 2 before removing the busbar
+            const updatedIdNr = IdNr;
+            executeRemoveBusbar(updatedIdNr);
+        } else {
+            console.error('Failed to submit parameters');
+        }
+    }).catch(error => {
+        console.error('Error:', error);
+    });
+    
 }
 
 document.addEventListener('DOMContentLoaded', function() {            
