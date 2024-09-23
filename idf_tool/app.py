@@ -221,8 +221,13 @@ def submit_parameters():
         front_end_sbar_data.append([new_sbar_name, new_sbar180deg, new_sbarheight, float(new_placement_x), float(new_placement_y), float(new_placement_z), float(new_outline_height), float(new_outline_width)])
 
     for i in range(len(new_sbar_data)):
-        corrected_component_placements, corrected_component_outlines, sbar_checkboxes_180deg, sbar_checkboxes_height = parse_idf.add_busbar(corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, new_sbar_data[i][0], new_sbar_data[i][1], new_sbar_data[i][2], new_sbar_data[i][3], new_sbar_data[i][4], new_sbar_data[i][5], new_sbar_data[i][6], new_sbar_data[i][7])
-        print(sbar_checkboxes_height)
+        corrected_component_placements, corrected_component_outlines, sbar_checkboxes_180deg, sbar_checkboxes_height = parse_idf.add_busbar(True, corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, new_sbar_data[i][0], new_sbar_data[i][1], new_sbar_data[i][2], new_sbar_data[i][3], new_sbar_data[i][4], new_sbar_data[i][5], new_sbar_data[i][6], new_sbar_data[i][7])
+        
+
+    for i in range(len(front_end_sbar_data)):
+        _, _, sbar_checkboxes_180deg, sbar_checkboxes_height = parse_idf.add_busbar(False, corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, front_end_sbar_data[i][0], front_end_sbar_data[i][1], front_end_sbar_data[i][2], front_end_sbar_data[i][3], front_end_sbar_data[i][4], front_end_sbar_data[i][5], front_end_sbar_data[i][6], front_end_sbar_data[i][7])
+
+    # print(sbar_checkboxes_height)
 
     session['front_end_sbar_data'] = front_end_sbar_data
     session['corrected_component_placements'] = corrected_component_placements
@@ -232,6 +237,8 @@ def submit_parameters():
 
     # print('submit_parameters')
     # print("after submit parameters", corrected_component_outlines)
+    print("submit_parameters")
+    print(corrected_component_placements)
     return render_template('manipulate.html', manipulate_after_submit_parameters = True, front_end_sbar_data=front_end_sbar_data, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, sbar_checkboxes_180deg=sbar_checkboxes_180deg, sbar_checkboxes_height=sbar_checkboxes_height, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
 
 
@@ -274,7 +281,8 @@ def preview():
                 
         corrected_component_placements = session.get('corrected_component_placements', {})
         # print(corrected_component_outlines)
-        print(sbar_checkboxes_height)
+        # print(sbar_checkboxes_height)
+        # print(corrected_component_placements)
         new_file_content = parse_idf.regenerate_idf_file_content(corrected_component_outlines, corrected_component_placements, file_content, sbar_checkboxes_height = sbar_checkboxes_height)
         session['new_file_content'] = new_file_content
         fig2 = parse_idf.draw_board(board_outline, corrected_component_outlines, corrected_component_placements)
@@ -359,7 +367,7 @@ def remove_busbar():
     session['corrected_component_placements'] = corrected_component_placements
     session['corrected_component_outlines'] = corrected_component_outlines
     print('remove_busbar')
-    print(sbar_checkboxes_height)
+    print(corrected_component_placements)
     return render_template('manipulate.html', manipulate_after_submit_parameters = True, new_sbar_data_length = len(front_end_sbar_data), front_end_sbar_data=front_end_sbar_data, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, sbar_checkboxes_180deg=sbar_checkboxes_180deg, sbar_checkboxes_height=sbar_checkboxes_height, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
 
 @app.route('/preview_src')

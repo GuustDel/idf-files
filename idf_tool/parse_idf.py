@@ -366,7 +366,7 @@ def get_coordinates(file_path):
             sbars.append(component_outline['name'])
     return board_outline_data, component_outlines_data, component_placements_data, unique_strings, sbars
 
-def add_busbar(corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, new_sbar_name, new_sbar180deg, new_sbarheight, new_placement_x, new_placement_y, new_placement_z, new_outline_height, new_outline_width):
+def add_busbar(bool, corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, new_sbar_name, new_sbar180deg, new_sbarheight, new_placement_x, new_placement_y, new_placement_z, new_outline_height, new_outline_width):
     outline = np.array([[0.0, 0.0, 0.0], [float(new_outline_width), 0.0, 0.0], [float(new_outline_width), float(new_outline_height), 0.0], [0.0, float(new_outline_height), 0.0], [0.0, 0.0, 0.0]])
     if new_sbar180deg:
         placement = np.array([float(new_placement_x), float(new_placement_y), float(new_placement_z), 180.0])
@@ -379,10 +379,14 @@ def add_busbar(corrected_component_outlines, corrected_component_placements, sba
             insert_index = i
             break
 
-    corrected_component_outlines.insert(insert_index, {'name': new_sbar_name, 'component_type': 'busbar', 'coordinates': outline})
-    corrected_component_placements.append({'name': new_sbar_name, 'component_type': 'busbar', 'placement': placement})
-    sbar_checkboxes_180deg[new_sbar_name] = new_sbar180deg
-    sbar_checkboxes_height[new_sbar_name] = new_sbarheight
+    if bool:
+        corrected_component_outlines.insert(insert_index, {'name': new_sbar_name, 'component_type': 'busbar', 'coordinates': outline})
+        corrected_component_placements.append({'name': new_sbar_name, 'component_type': 'busbar', 'placement': placement})
+        sbar_checkboxes_180deg[new_sbar_name] = new_sbar180deg
+        sbar_checkboxes_height[new_sbar_name] = new_sbarheight
+    else:
+        sbar_checkboxes_180deg[new_sbar_name] = new_sbar180deg
+        sbar_checkboxes_height[new_sbar_name] = new_sbarheight
     return corrected_component_placements, corrected_component_outlines, sbar_checkboxes_180deg, sbar_checkboxes_height
 
 
