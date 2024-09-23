@@ -298,7 +298,7 @@ def regenerate_idf(corrected_component_outlines_lib, corrected_component_placeme
         outfile.write(new_lines)
     return output_file_path
 
-def regenerate_idf_file_content(corrected_component_outlines_lib, corrected_component_placements_lib, file_content, sbar_checkboxes_height):
+def regenerate_idf_file_content(corrected_component_outlines_lib, corrected_component_placements_lib, file_content, sbar_checkboxes_height, new_string_names):
     new_lines = ''
     lines = file_content.splitlines()
     for i in range(len(lines)):
@@ -313,7 +313,11 @@ def regenerate_idf_file_content(corrected_component_outlines_lib, corrected_comp
             new_lines += f'"{corrected_component_placement["name"]}" "{corrected_component_placement["component_type"]}" BB{counter_bb:03}\n'
             counter_bb += 1
         else:
-            new_lines += f'"{corrected_component_placement["name"]}" "{corrected_component_placement["component_type"]}" STR{counter_str:03}\n'
+            if new_string_names[corrected_component_placement['name']] == '': 
+                name = corrected_component_placement['name']
+            else:
+                name = new_string_names[corrected_component_placement['name']]
+            new_lines += f'"{name}" "{corrected_component_placement["component_type"]}" STR{counter_str:03}\n'
             counter_str += 1
         new_lines += f'{corrected_component_placement["placement"][0]} {corrected_component_placement["placement"][1]} {corrected_component_placement["placement"][2]} {corrected_component_placement["placement"][3]} TOP PLACED\n'
     new_lines += '.END_PLACEMENT' + '\n'
@@ -331,7 +335,11 @@ def regenerate_idf_file_content(corrected_component_outlines_lib, corrected_comp
     for corrected_component_outline in corrected_component_outlines_lib:
         if corrected_component_outline['component_type'] != 'busbar':
             new_lines += '.MECHANICAL' + '\n'
-            new_lines += f'"{corrected_component_outline["name"]}" "{corrected_component_outline["component_type"]}" MM 1.0\n'
+            if new_string_names[corrected_component_outline['name']] == '': 
+                name = corrected_component_outline['name']
+            else:
+                name = new_string_names[corrected_component_outline['name']]
+            new_lines += f'"{name}" "{corrected_component_outline["component_type"]}" MM 1.0\n'
             for coordinate in corrected_component_outline['coordinates']:
                 new_lines += f'0 {coordinate[0]} {coordinate[1]} {coordinate[2]}\n'
             new_lines += '.END_MECHANICAL' + '\n'

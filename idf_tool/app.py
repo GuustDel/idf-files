@@ -276,7 +276,7 @@ def preview():
         corrected_component_outlines = session.get('corrected_component_outlines', {})
                 
         corrected_component_placements = session.get('corrected_component_placements', {})
-        new_file_content = parse_idf.regenerate_idf_file_content(corrected_component_outlines, corrected_component_placements, file_content, sbar_checkboxes_height = sbar_checkboxes_height)
+        new_file_content = parse_idf.regenerate_idf_file_content(corrected_component_outlines, corrected_component_placements, file_content, sbar_checkboxes_height = sbar_checkboxes_height, new_string_names = new_string_names)
         session['new_file_content'] = new_file_content
         fig2 = parse_idf.draw_board(board_outline, corrected_component_outlines, corrected_component_placements)
 
