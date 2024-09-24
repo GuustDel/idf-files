@@ -259,6 +259,54 @@ def corrected_component_placements(component_placements, String_names, new_strin
         counter += 1
     return corrected_component_placements_lib
 
+def corrected_component_placements_new(corrected_component_placements, sbar_checkboxes_180deg, corrected_component_outlines):
+    corrected_component_placements_lib = []
+    for component_placement in corrected_component_placements:
+        if 'sbar' in component_placement['name']:
+            for sbar, checked in sbar_checkboxes_180deg.items():
+                if sbar == component_placement['name']:
+                    if checked:
+                        for component in corrected_component_outlines:
+                            if component['name'] == component_placement['name']:
+                                component_long_side = component['coordinates'][2,0]
+                                component_short_side = component['coordinates'][2,1]
+                        if component_placement['placement'][3] == 0:
+                            corrected_placement = np.array([
+                                round(component_placement['placement'][0] + component_long_side), 
+                                round(component_placement['placement'][1] + component_short_side), 
+                                component_placement['placement'][2], 
+                                180.0
+                            ])
+                        elif component_placement['placement'][3] == 90.0:
+                            corrected_placement = np.array([
+                                round(component_placement['placement'][0] - component_short_side), 
+                                round(component_placement['placement'][1] + component_long_side), 
+                                component_placement['placement'][2], 
+                                -90.0
+                            ])
+                        elif component_placement['placement'][3] == 180.0:
+                            corrected_placement = np.array([
+                                round(component_placement['placement'][0] - component_long_side), 
+                                round(component_placement['placement'][1] - component_short_side), 
+                                component_placement['placement'][2], 
+                                0.0
+                            ])
+                        elif component_placement['placement'][3] == 270.0:
+                            corrected_placement = np.array([
+                                round(component_placement['placement'][0] + component_short_side), 
+                                round(component_placement['placement'][1] - component_long_side), 
+                                component_placement['placement'][2], 
+                                90.0
+                            ])
+                    else:
+                        corrected_placement = component_placement['placement']
+        else:
+            corrected_placement = component_placement['placement']
+
+        corrected_placement_lib = {'name': component_placement['name'], 'component_type': component_placement['component_type'],'placement': corrected_placement}
+        corrected_component_placements_lib.append(corrected_placement_lib)
+    return corrected_component_placements_lib
+
 def regenerate_idf(corrected_component_outlines_lib, corrected_component_placements_lib, file_path, sbar_checkboxes_height):
     with open(file_path, 'r') as infile:
         new_lines = ''

@@ -253,6 +253,7 @@ def preview():
     component_outlines = session.get('component_outlines', None)
     component_placements = session.get('component_placements', None)
     sbar_checkboxes_height = session.get('sbar_checkboxes_height', {})
+    sbar_checkboxes_180deg = session.get('sbar_checkboxes_180deg', {})
 
     if board_outline_list is not None:
         board_outline = np.array([np.array(board) for board in board_outline_list])
@@ -274,12 +275,15 @@ def preview():
         return render_template('observe.html', file_content=file_content, graph_json=graph_json, new_file_content=new_file_content, fig_dir=fig_dir)
     else:
         corrected_component_outlines = session.get('corrected_component_outlines', {})
-        corrected_component_placements = session.get('corrected_component_placements', {})
+        corrected_component_placements_current = session.get('corrected_component_placements', {})
 
-        new_file_content = parse_idf.regenerate_idf_file_content(corrected_component_outlines, corrected_component_placements, file_content, sbar_checkboxes_height = sbar_checkboxes_height, new_string_names = new_string_names)
+        corrected_component_placements_new = parse_idf.corrected_component_placements_new(corrected_component_placements = corrected_component_placements_current, sbar_checkboxes_180deg = sbar_checkboxes_180deg, corrected_component_outlines = corrected_component_outlines)
+        session['corrected_component_placements'] = corrected_component_placements_new
+
+        new_file_content = parse_idf.regenerate_idf_file_content(corrected_component_outlines, corrected_component_placements_new, file_content, sbar_checkboxes_height = sbar_checkboxes_height, new_string_names = new_string_names)
         session['new_file_content'] = new_file_content
         
-        fig2 = parse_idf.draw_board(board_outline, corrected_component_outlines, corrected_component_placements)
+        fig2 = parse_idf.draw_board(board_outline, corrected_component_outlines, corrected_component_placements_new)
         graph_json2 = json.dumps(fig2, cls=plotly.utils.PlotlyJSONEncoder)
         session['graph_json2'] = graph_json2
         
