@@ -106,9 +106,12 @@ def draw_board(board_outline, component_outlines, component_placements):
                 x_outline, y_outline, z_outline = np.array(rotated_coordinates).T
                 x_offset, y_offset, z_offset = component_placement['placement'][:3]
                 if 'sbar' in component_outline['name']:
-                    x_corr = x_outline + x_offset - component_outline['coordinates'][0, 0]
-                    y_corr = y_outline + y_offset - component_outline['coordinates'][0, 1]
-                    z_corr = z_outline + z_offset - component_outline['coordinates'][0, 2]
+                    x_corr = x_outline + x_offset 
+                    # - component_outline['coordinates'][0, 0]
+                    y_corr = y_outline + y_offset 
+                    # - component_outline['coordinates'][0, 1]
+                    z_corr = z_outline + z_offset 
+                    # - component_outline['coordinates'][0, 2]
                 else:
                     x_corr = x_outline + x_offset
                     y_corr = y_outline + y_offset
@@ -125,6 +128,7 @@ def draw_board(board_outline, component_outlines, component_placements):
             name=component_placement['name'],
             showlegend=False  
         ))
+        print(component_placement['name'], component_placement['placement'][0], component_placement['placement'][1])
 
     # Update layout
     fig.update_layout(
@@ -225,28 +229,28 @@ def corrected_component_placements(component_placements, String_names, new_strin
                                 component_short_side = component['coordinates'][2,1]
                         if component_placement['placement'][3] == 0:
                             corrected_placement = np.array([
-                                round(component_placement['placement'][0]), 
+                                round(component_placement['placement'][0] + component_short_side), 
                                 round(component_placement['placement'][1]), 
                                 component_placement['placement'][2], 
                                 90.0
                             ])
                         elif component_placement['placement'][3] == 90.0:
                             corrected_placement = np.array([
-                                round(component_placement['placement'][0] - component_short_side), 
+                                round(component_placement['placement'][0]), 
                                 round(component_placement['placement'][1] + component_short_side), 
                                 component_placement['placement'][2], 
                                 180.0
                             ])
                         elif component_placement['placement'][3] == 180.0:
                             corrected_placement = np.array([
-                                round(component_placement['placement'][0] - 2*component_short_side), 
+                                round(component_placement['placement'][0] - component_short_side), 
                                 round(component_placement['placement'][1]), 
                                 component_placement['placement'][2], 
                                 -90.0
                             ])
                         elif component_placement['placement'][3] == 270.0:
                             corrected_placement = np.array([
-                                round(component_placement['placement'][0] - component_short_side), 
+                                round(component_placement['placement'][0]), 
                                 round(component_placement['placement'][1] - component_short_side), 
                                 component_placement['placement'][2], 
                                 0.0
