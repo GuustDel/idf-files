@@ -128,7 +128,6 @@ def draw_board(board_outline, component_outlines, component_placements):
             name=component_placement['name'],
             showlegend=False  
         ))
-        print(component_placement['name'], component_placement['placement'][0], component_placement['placement'][1])
 
     # Update layout
     fig.update_layout(
@@ -263,13 +262,13 @@ def corrected_component_placements(component_placements, String_names, new_strin
         counter += 1
     return corrected_component_placements_lib
 
-def corrected_component_placements_new(corrected_component_placements, sbar_checkboxes_180deg, corrected_component_outlines):
+def corrected_component_placements_new(corrected_component_placements, sbar_checkboxes_180deg, corrected_component_outlines, sbar_checkboxes_180deg_history):
     corrected_component_placements_lib = []
     for component_placement in corrected_component_placements:
         if 'sbar' in component_placement['name']:
             for sbar, checked in sbar_checkboxes_180deg.items():
                 if sbar == component_placement['name']:
-                    if checked:
+                    if ((len(sbar_checkboxes_180deg_history[sbar]) >= 2) and (sbar_checkboxes_180deg_history[sbar][-2] != sbar_checkboxes_180deg_history[sbar][-1])) or ((len(sbar_checkboxes_180deg_history[sbar]) == 1) and (sbar_checkboxes_180deg_history[sbar][-1] == True)):
                         for component in corrected_component_outlines:
                             if component['name'] == component_placement['name']:
                                 component_long_side = component['coordinates'][2,0]
@@ -432,8 +431,8 @@ def add_busbar(bool, corrected_component_outlines, corrected_component_placement
         placement = np.array([float(new_placement_x), float(new_placement_y), float(new_placement_z), 180.0])
     else:
         placement = np.array([float(new_placement_x), float(new_placement_y), float(new_placement_z), 0.0])
-    
-    insert_index = len(corrected_component_outlines)  
+
+    insert_index = len(corrected_component_outlines)
     for i, corrected_component_outline in enumerate(corrected_component_outlines):
         if corrected_component_outline['component_type'] == 'string':
             insert_index = i
@@ -448,5 +447,3 @@ def add_busbar(bool, corrected_component_outlines, corrected_component_placement
         sbar_checkboxes_180deg[new_sbar_name] = new_sbar180deg
         sbar_checkboxes_height[new_sbar_name] = new_sbarheight
     return corrected_component_placements, corrected_component_outlines, sbar_checkboxes_180deg, sbar_checkboxes_height
-
-

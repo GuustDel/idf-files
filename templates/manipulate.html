@@ -47,7 +47,7 @@
                     <span>height</span>
                 </div>
             </div>
-            {% if sbars %}   
+            {% if sbars %}
                 {% for sbar in sbars %}
                 {% set BusbarId1 = loop.index0 %}
                 <div class="row mb-2">
@@ -59,13 +59,13 @@
                         </button>
                     </div>
                     <div class="col">
-                    <label for="sbar_{{ sbar }}">{{ sbar }}:</label>
+                        <label for="sbar_{{ sbar }}">{{ sbar }}:</label>
                     </div>
                     <div class="col">
-                    <input type="checkbox" id="sbar180deg_{{ sbar }}" name="sbar180deg_{{ sbar }}" {% if sbar_checkboxes_180deg[sbar] %}checked{% endif %}>
+                        <input type="checkbox" id="sbar180deg_{{ sbar }}" name="sbar180deg_{{ sbar }}" {% if sbar_checkboxes_180deg[sbar] %}checked{% endif %}>
                     </div>
                     <div class="col">
-                    <input type="checkbox" id="sbarheight_{{ sbar }}" name="sbarheight_{{ sbar }}" {% if sbar_checkboxes_height[sbar] %}checked{% endif %}>
+                        <input type="checkbox" id="sbarheight_{{ sbar }}" name="sbarheight_{{ sbar }}" {% if sbar_checkboxes_height[sbar] %}checked{% endif %}>
                     </div>
                     {% for corrected_component_placement in corrected_component_placements %}
                         {% if corrected_component_placement.name == sbar %}
@@ -94,7 +94,6 @@
                 </div>
                 {% endfor %}
 
-
                 {% if manipulate_after_submit_parameters %}
                     {% for sbar in front_end_sbar_data %}
                     {% set BusbarId2 = loop.index0 %}
@@ -110,26 +109,34 @@
                             <input type="text" style="width: 200px;" class="form-control" name="new_sbar_name" placeholder="Enter name" value="{{ sbar[0] }}">
                         </div>
                         <div class="col">
-                            <input type="checkbox" name="new_sbar180deg" {% if sbar[1] %}checked{% endif %}>
+                            <input type="checkbox" name="new_sbar180deg_{{ BusbarId2 }}" {% if sbar_checkboxes_180deg[sbar[0]] %}checked{% endif %}>
                         </div>
                         <div class="col">
-                            <input type="checkbox" name="new_sbarheight" {% if sbar[2] %}checked{% endif %}>
+                            <input type="checkbox" name="new_sbarheight_{{ BusbarId2 }}" {% if sbar_checkboxes_height[sbar[0]] %}checked{% endif %}>
                         </div>
-                        <div class="col">
-                            <input type="number" class="form-control" name="new_placement_x" placeholder="Enter x" step="any" value="{{ sbar[3] }}">
-                        </div>
-                        <div class="col">
-                            <input type="number" class="form-control" name="new_placement_y" placeholder="Enter y" step="any" value="{{ sbar[4] }}">
-                        </div>
-                        <div class="col">
-                            <input type="number" class="form-control" name="new_placement_z" placeholder="Enter z" step="any" value="{{ sbar[5] }}">
-                        </div>
-                        <div class="col">
-                            <input type="number" class="form-control" name="new_outline_length" placeholder="Enter width" step="any" value="{{ sbar[6] }}">
-                        </div>
-                        <div class="col">
-                            <input type="number" class="form-control" name="new_outline_width" placeholder="Enter height" step="any" value="{{ sbar[7] }}">
-                        </div>
+                        {% for corrected_component_placement in corrected_component_placements %}
+                            {% if corrected_component_placement.name == sbar[0] %}
+                                <div class="col">
+                                    <input type="number" class="form-control" name="placement_{{ corrected_component_placement.name }}_0" placeholder="Enter x" step="any" value="{{ corrected_component_placement.placement[0] }}">
+                                </div>
+                                <div class="col">
+                                    <input type="number" class="form-control" name="placement_{{ corrected_component_placement.name }}_1" placeholder="Enter y" step="any" value="{{ corrected_component_placement.placement[1] }}">
+                                </div>
+                                <div class="col">
+                                    <input type="number" class="form-control" name="placement_{{ corrected_component_placement.name }}_2" placeholder="Enter z" step="any" value="{{ corrected_component_placement.placement[2] }}">
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                        {% for corrected_component_outline in corrected_component_outlines %}
+                            {% if corrected_component_outline.name == sbar[0] %}
+                                <div class="col">
+                                    <input type="number" class="form-control" name="outline_{{ corrected_component_outline.name }}_0" placeholder="Enter width" step="any" value="{{ corrected_component_outline.coordinates[2,0] }}">
+                                </div>
+                                <div class="col">
+                                    <input type="number" class="form-control" name="outline_{{ corrected_component_outline.name }}_1" placeholder="Enter height" step="any" value="{{ corrected_component_outline.coordinates[2,1] }}">
+                                </div>
+                            {% endif %}
+                        {% endfor %}
                     </div>
                     {% endfor %}
                 {% endif %}

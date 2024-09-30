@@ -101,10 +101,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 <input type="text" style="width: 200px;" class="form-control" name="new_sbar_name_dyn" placeholder="Enter name">
             </div>
             <div class="col">
-                <input type="checkbox" name="new_sbar180deg_${existingRows}">
+                <input type="checkbox" name="new_sbar180deg_dyn_${existingRows}">
             </div>
             <div class="col">
-                <input type="checkbox" name="new_sbarheight_${existingRows}">
+                <input type="checkbox" name="new_sbarheight_dyn_${existingRows}">
             </div>
             <div class="col">
                 <input type="number" class="form-control" name="new_placement_x_dyn" placeholder="Enter x" step="any">

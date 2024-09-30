@@ -130,32 +130,16 @@ def submit_file():
 
 @app.route('/export', methods=['POST'])
 def export():
-    global strings, file_path, board_outline, component_outlines, component_placements
-
-    filename = session.get('filename', None)
-
-    strings = session.get('strings', [])
-    board_outline_list = session.get('board_outline', None)
-    component_outlines = session.get('component_outlines', None)
-    component_placements = session.get('component_placements', None)
-
-    # Convert to numpy arrays if not None
-    if board_outline_list is not None:
-        board_outline = np.array([np.array(board) for board in board_outline_list])
-    if component_outlines is not None:
-        for component in component_outlines:
-            component['coordinates'] = np.array(component['coordinates'])
-    if component_placements is not None:
-        for component in component_placements:
-            component['placement'] = np.array(component['placement'])
+    global file_path
 
     if file_path:
-        sbar_checkboxes_180deg = session.get('sbar_checkboxes_180deg', {})
-        sbar_checkboxes_height = session.get('sbar_checkboxes_height', {})
-        new_string_names = session.get('new_string_names', {})
-        output_file_path = parse_idf.export_idf(component_outlines, component_placements, strings, file_path, new_string_names=new_string_names,sbar_checkboxes_180deg=sbar_checkboxes_180deg, sbar_checkboxes_height=sbar_checkboxes_height)
         filename, _ = os.path.splitext(session.get('filename', None))
+        new_file_content = session.get('new_file_content', 'No new file content found')
+        output_file_path = os.path.join(app.config['EXPORT_FOLDER'], filename)
+        with open(output_file_path, 'w') as outfile:
+            outfile.write(new_file_content)
         return send_file(output_file_path, as_attachment=True, download_name=f'{filename}_output.idf')
+
     fig_dir = url_for('static', filename='img/Soltech_logo.png')
     return render_template('home.html', fig_dir=fig_dir)
 
@@ -185,11 +169,10 @@ def submit_parameters():
     front_end_sbar_data = session.get('front_end_sbar_data', [])
     Index_dyn_busbar = len(front_end_sbar_data)
     session['Index_dyn_busbar'] = Index_dyn_busbar
-
     for i in range(len(request.form.getlist('new_sbar_name_dyn'))):
         new_sbar_name = request.form.getlist('new_sbar_name_dyn')[i]
-        new_sbar180deg = bool(request.form.get(f'new_sbar180deg_{i}', False))
-        new_sbarheight = bool(request.form.get(f'new_sbarheight_{i}', False))
+        new_sbar180deg = bool(request.form.get(f'new_sbar180deg_dyn_{i}', False))
+        new_sbarheight = bool(request.form.get(f'new_sbarheight_dyn_{i}', False))
         new_placement_x = request.form.getlist('new_placement_x_dyn')[i]
         new_placement_y = request.form.getlist('new_placement_y_dyn')[i]
         new_placement_z = request.form.getlist('new_placement_z_dyn')[i]
@@ -198,13 +181,27 @@ def submit_parameters():
         new_sbar_data.append([new_sbar_name, new_sbar180deg, new_sbarheight, float(new_placement_x), float(new_placement_y), float(new_placement_z), float(new_outline_height), float(new_outline_width)])
         front_end_sbar_data.append([new_sbar_name, new_sbar180deg, new_sbarheight, float(new_placement_x), float(new_placement_y), float(new_placement_z), float(new_outline_height), float(new_outline_width)])
 
+    for i in range(len(request.form.getlist('new_sbar_name'))):
+        front_end_sbar_data[i][0] = request.form.getlist('new_sbar_name')[i]
+        front_end_sbar_data[i][1] = bool(request.form.get(f'new_sbar180deg_{i}', False))
+        front_end_sbar_data[i][2] = bool(request.form.get(f'new_sbarheight_{i}', False))
+
+        front_end_sbar_data[i][3] = float(request.form.get(f'placement_{front_end_sbar_data[i][0]}_0', front_end_sbar_data[i][3]))
+        front_end_sbar_data[i][4] = float(request.form.get(f'placement_{front_end_sbar_data[i][0]}_1', front_end_sbar_data[i][4]))
+        front_end_sbar_data[i][5] = float(request.form.get(f'placement_{front_end_sbar_data[i][0]}_2', front_end_sbar_data[i][5]))
+        front_end_sbar_data[i][6] = float(request.form.get(f'outline_{front_end_sbar_data[i][0]}_0', front_end_sbar_data[i][6]))
+        front_end_sbar_data[i][7] = float(request.form.get(f'outline_{front_end_sbar_data[i][0]}_1', front_end_sbar_data[i][7]))
+
     for i in range(len(new_sbar_data)):
         corrected_component_placements, corrected_component_outlines, sbar_checkboxes_180deg, sbar_checkboxes_height = parse_idf.add_busbar(True, corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, new_sbar_data[i][0], new_sbar_data[i][1], new_sbar_data[i][2], new_sbar_data[i][3], new_sbar_data[i][4], new_sbar_data[i][5], new_sbar_data[i][6], new_sbar_data[i][7])
-        
-
+    print("new_sbar_data", new_sbar_data)
     for i in range(len(front_end_sbar_data)):
         _, _, sbar_checkboxes_180deg, sbar_checkboxes_height = parse_idf.add_busbar(False, corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, front_end_sbar_data[i][0], front_end_sbar_data[i][1], front_end_sbar_data[i][2], front_end_sbar_data[i][3], front_end_sbar_data[i][4], front_end_sbar_data[i][5], front_end_sbar_data[i][6], front_end_sbar_data[i][7])
 
+    print("corrected_component_placements", corrected_component_placements)
+    print("front_end_sbar_data", front_end_sbar_data)
+    print("sbar_checkboxes_180deg", sbar_checkboxes_180deg)
+    
     if 'sbar_checkboxes_180deg_history' not in session:
         session['sbar_checkboxes_180deg_history'] = {}
 
@@ -222,8 +219,7 @@ def submit_parameters():
                 placement['placement'][0] = float(request.form.get(f'placement_{name}_0', placement['placement'][0]))
                 placement['placement'][1] = float(request.form.get(f'placement_{name}_1', placement['placement'][1]))
                 placement['placement'][2] = float(request.form.get(f'placement_{name}_2', placement['placement'][2]))
-            
-        
+
     for outline in corrected_component_outlines:
         name = outline['name']
         if outline['component_type'] == 'busbar':
@@ -233,15 +229,16 @@ def submit_parameters():
                 outline['coordinates'][2, 1] = float(request.form.get(f'outline_{name}_1', outline['coordinates'][2, 1]))
                 outline['coordinates'][3, 1] = float(request.form.get(f'outline_{name}_1', outline['coordinates'][2, 1]))
 
+    corrected_component_placements_new = parse_idf.corrected_component_placements_new(corrected_component_placements = corrected_component_placements, sbar_checkboxes_180deg = sbar_checkboxes_180deg, corrected_component_outlines = corrected_component_outlines, sbar_checkboxes_180deg_history = sbar_checkboxes_180deg_history)
 
     session['front_end_sbar_data'] = front_end_sbar_data
-    session['corrected_component_placements'] = corrected_component_placements
+    session['corrected_component_placements'] = corrected_component_placements_new
     session['corrected_component_outlines'] = corrected_component_outlines
     session['sbar_checkboxes_180deg'] = sbar_checkboxes_180deg
     session['sbar_checkboxes_height'] = sbar_checkboxes_height
 
     print("submit_parameters")
-    return render_template('manipulate.html', manipulate_after_submit_parameters = True, front_end_sbar_data=front_end_sbar_data, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, sbar_checkboxes_180deg=sbar_checkboxes_180deg, sbar_checkboxes_height=sbar_checkboxes_height, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
+    return render_template('manipulate.html', manipulate_after_submit_parameters = True, front_end_sbar_data=front_end_sbar_data, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, sbar_checkboxes_180deg=sbar_checkboxes_180deg, sbar_checkboxes_height=sbar_checkboxes_height, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements_new, corrected_component_outlines=corrected_component_outlines)
 
 
 @app.route('/observe_src')
@@ -275,15 +272,11 @@ def preview():
         return render_template('observe.html', file_content=file_content, graph_json=graph_json, new_file_content=new_file_content, fig_dir=fig_dir)
     else:
         corrected_component_outlines = session.get('corrected_component_outlines', {})
-        corrected_component_placements_current = session.get('corrected_component_placements', {})
-
-        corrected_component_placements_new = parse_idf.corrected_component_placements_new(corrected_component_placements = corrected_component_placements_current, sbar_checkboxes_180deg = sbar_checkboxes_180deg, corrected_component_outlines = corrected_component_outlines)
-        session['corrected_component_placements'] = corrected_component_placements_new
-
-        new_file_content = parse_idf.regenerate_idf_file_content(corrected_component_outlines, corrected_component_placements_new, file_content, sbar_checkboxes_height = sbar_checkboxes_height, new_string_names = new_string_names)
+        corrected_component_placements = session.get('corrected_component_placements', {})
+        new_file_content = parse_idf.regenerate_idf_file_content(corrected_component_outlines, corrected_component_placements, file_content, sbar_checkboxes_height = sbar_checkboxes_height, new_string_names = new_string_names)
         session['new_file_content'] = new_file_content
         
-        fig2 = parse_idf.draw_board(board_outline, corrected_component_outlines, corrected_component_placements_new)
+        fig2 = parse_idf.draw_board(board_outline, corrected_component_outlines, corrected_component_placements)
         graph_json2 = json.dumps(fig2, cls=plotly.utils.PlotlyJSONEncoder)
         session['graph_json2'] = graph_json2
         
