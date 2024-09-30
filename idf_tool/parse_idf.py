@@ -268,7 +268,7 @@ def corrected_component_placements_new(corrected_component_placements, sbar_chec
         if 'sbar' in component_placement['name']:
             for sbar, checked in sbar_checkboxes_180deg.items():
                 if sbar == component_placement['name']:
-                    if ((len(sbar_checkboxes_180deg_history[sbar]) >= 2) and (sbar_checkboxes_180deg_history[sbar][-2] != sbar_checkboxes_180deg_history[sbar][-1])) or ((len(sbar_checkboxes_180deg_history[sbar]) == 1) and (sbar_checkboxes_180deg_history[sbar][-1] == True)):
+                    if ((len(sbar_checkboxes_180deg_history[sbar]) >= 2) and (sbar_checkboxes_180deg_history[sbar][-2] == False) and (sbar_checkboxes_180deg_history[sbar][-1] == True)) or ((len(sbar_checkboxes_180deg_history[sbar]) == 1) and (sbar_checkboxes_180deg_history[sbar][-1] == True)):
                         for component in corrected_component_outlines:
                             if component['name'] == component_placement['name']:
                                 component_long_side = component['coordinates'][2,0]
@@ -294,12 +294,45 @@ def corrected_component_placements_new(corrected_component_placements, sbar_chec
                                 component_placement['placement'][2], 
                                 0.0
                             ])
-                        elif component_placement['placement'][3] == 270.0:
+                        elif component_placement['placement'][3] == 270.0 or component_placement['placement'][3] == -90.0: 
                             corrected_placement = np.array([
                                 round(component_placement['placement'][0] + component_short_side), 
                                 round(component_placement['placement'][1] - component_long_side), 
                                 component_placement['placement'][2], 
                                 90.0
+                            ])
+                    elif (len(sbar_checkboxes_180deg_history[sbar]) >= 2) and (sbar_checkboxes_180deg_history[sbar][-2] == True) and (sbar_checkboxes_180deg_history[sbar][-1] == False):
+                        for component in corrected_component_outlines:
+                            if component['name'] == component_placement['name']:
+                                component_long_side = component['coordinates'][2,0]
+                                component_short_side = component['coordinates'][2,1]
+                        if component_placement['placement'][3] == 180.0:
+                            corrected_placement = np.array([
+                                round(component_placement['placement'][0] - component_long_side), 
+                                round(component_placement['placement'][1] - component_short_side), 
+                                component_placement['placement'][2], 
+                                0.0
+                            ])
+                        elif component_placement['placement'][3] == 270.0 or component_placement['placement'][3] == -90.0:
+                            corrected_placement = np.array([
+                                round(component_placement['placement'][0] + component_short_side), 
+                                round(component_placement['placement'][1] - component_long_side), 
+                                component_placement['placement'][2], 
+                                90.0
+                            ])
+                        elif component_placement['placement'][3] == 0.0:
+                            corrected_placement = np.array([
+                                round(component_placement['placement'][0] + component_long_side), 
+                                round(component_placement['placement'][1] + component_short_side), 
+                                component_placement['placement'][2], 
+                                180.0
+                            ])
+                        elif component_placement['placement'][3] == 90.0:
+                            corrected_placement = np.array([
+                                round(component_placement['placement'][0] - component_short_side), 
+                                round(component_placement['placement'][1] + component_long_side), 
+                                component_placement['placement'][2], 
+                                -90.0
                             ])
                     else:
                         corrected_placement = component_placement['placement']
