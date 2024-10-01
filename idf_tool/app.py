@@ -198,7 +198,6 @@ def submit_parameters():
     for i in range(len(front_end_sbar_data)):
         _, _, sbar_checkboxes_180deg, sbar_checkboxes_height = parse_idf.add_busbar(False, corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, front_end_sbar_data[i][0], front_end_sbar_data[i][1], front_end_sbar_data[i][2], front_end_sbar_data[i][3], front_end_sbar_data[i][4], front_end_sbar_data[i][5], front_end_sbar_data[i][6], front_end_sbar_data[i][7])
 
-    print("corrected_component_placements", corrected_component_placements)
     print("front_end_sbar_data", front_end_sbar_data)
     print("sbar_checkboxes_180deg", sbar_checkboxes_180deg)
     
@@ -228,8 +227,9 @@ def submit_parameters():
                 outline['coordinates'][1, 0] = float(request.form.get(f'outline_{name}_0', outline['coordinates'][2, 0]))
                 outline['coordinates'][2, 1] = float(request.form.get(f'outline_{name}_1', outline['coordinates'][2, 1]))
                 outline['coordinates'][3, 1] = float(request.form.get(f'outline_{name}_1', outline['coordinates'][2, 1]))
-
+                
     corrected_component_placements_new = parse_idf.corrected_component_placements_new(corrected_component_placements = corrected_component_placements, sbar_checkboxes_180deg = sbar_checkboxes_180deg, corrected_component_outlines = corrected_component_outlines, sbar_checkboxes_180deg_history = sbar_checkboxes_180deg_history)
+    print("corrected_component_placements", corrected_component_placements_new)
 
     session['front_end_sbar_data'] = front_end_sbar_data
     session['corrected_component_placements'] = corrected_component_placements_new

@@ -274,6 +274,8 @@ def corrected_component_placements_new(corrected_component_placements, sbar_chec
                                 component_long_side = component['coordinates'][2,0]
                                 component_short_side = component['coordinates'][2,1]
                         if component_placement['placement'][3] == 0:
+                            print("component_long_side", component_long_side)
+                            print("component_short_side", component_short_side)
                             corrected_placement = np.array([
                                 round(component_placement['placement'][0] + component_long_side), 
                                 round(component_placement['placement'][1] + component_short_side), 
@@ -459,9 +461,11 @@ def get_coordinates(file_path):
     return board_outline_data, component_outlines_data, component_placements_data, unique_strings, sbars
 
 def add_busbar(bool, corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, new_sbar_name, new_sbar180deg, new_sbarheight, new_placement_x, new_placement_y, new_placement_z, new_outline_height, new_outline_width):
-    outline = np.array([[0.0, 0.0, 0.0], [float(new_outline_width), 0.0, 0.0], [float(new_outline_width), float(new_outline_height), 0.0], [0.0, float(new_outline_height), 0.0], [0.0, 0.0, 0.0]])
+    print("new_outline_width", new_outline_width)
+    print("new_outline_height", new_outline_height)
+    outline = np.array([[0.0, 0.0, 0.0], [float(new_outline_height), 0.0, 0.0], [float(new_outline_height), float(new_outline_width), 0.0], [0.0, float(new_outline_width), 0.0], [0.0, 0.0, 0.0]])
     if new_sbar180deg:
-        placement = np.array([float(new_placement_x), float(new_placement_y), float(new_placement_z), 180.0])
+        placement = np.array([float(new_placement_x)-float(new_outline_height), float(new_placement_y)-float(new_outline_width), float(new_placement_z), 0.0])
     else:
         placement = np.array([float(new_placement_x), float(new_placement_y), float(new_placement_z), 0.0])
 
