@@ -49,12 +49,12 @@ def home():
         new_string_names = {string: '' for string in strings}
 
     fig_dir = url_for('static', filename='img/Soltech_logo.png')
-    return render_template('home.html', strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, sbar_checkboxes_180deg=sbar_checkboxes_180deg, new_string_names=new_string_names, sbar_checkboxes_height=sbar_checkboxes_height, fig_dir=fig_dir)
+    return render_template('home.html', strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, sbar_checkboxes_180deg=sbar_checkboxes_180deg, new_string_names=new_string_names, sbar_checkboxes_height=sbar_checkboxes_height, fig_dir=fig_dir, enable_drop=True)
 
 @app.route('/')
 def base():
     fig_dir = url_for('static', filename='img/Soltech_logo.png')
-    return render_template('home.html', fig_dir=fig_dir)
+    return render_template('home.html', fig_dir=fig_dir, enable_drop=True)
 
 @app.route('/submit', methods=['POST'])
 def submit_file():
