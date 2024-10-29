@@ -49,10 +49,9 @@
             </div>
             {% if sbars %}
                 {% for sbar in sbars %}
-                {% set BusbarId1 = loop.index0 %}
                 <div class="row mb-2">
                     <div class="col">
-                        <button type="button" class="btn btn-danger" onclick="removeBusbar('{{ BusbarId1 }}', 1, '{{sbar}}')">
+                        <button type="button" class="btn btn-danger" onclick="removeBusbar('{{sbar}}')">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
                                 <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"/>
                             </svg>
@@ -93,54 +92,6 @@
                     {% endfor %}
                 </div>
                 {% endfor %}
-
-                {% if manipulate_after_submit_parameters %}
-                    {% for sbar in front_end_sbar_data %}
-                    {% set BusbarId2 = loop.index0 %}
-                    <div class="row mb-2">
-                        <div class="col">
-                            <button type="button" class="btn btn-danger" onclick="removeBusbar('{{ BusbarId2 }}', 2, '{{sbar}}')">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
-                                    <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"/>
-                                </svg>
-                            </button>
-                        </div>
-                        <div class="col">
-                            <input type="text" style="width: 200px;" class="form-control" name="new_sbar_name" placeholder="Enter name" value="{{ sbar[0] }}">
-                        </div>
-                        <div class="col">
-                            <input type="checkbox" name="new_sbar180deg_{{ BusbarId2 }}" {% if sbar_checkboxes_180deg[sbar[0]] %}checked{% endif %}>
-                        </div>
-                        <div class="col">
-                            <input type="checkbox" name="new_sbarheight_{{ BusbarId2 }}" {% if sbar_checkboxes_height[sbar[0]] %}checked{% endif %}>
-                        </div>
-                        {% for id, placement in corrected_component_placements.items() %}
-                            {% if placement.name == sbar[0] %}
-                                <div class="col">
-                                    <input type="number" class="form-control" name="placement_{{ placement.name }}_0" placeholder="Enter x" step="any" value="{{ placement.placement[0] }}">
-                                </div>
-                                <div class="col">
-                                    <input type="number" class="form-control" name="placement_{{ placement.name }}_1" placeholder="Enter y" step="any" value="{{ placement.placement[1] }}">
-                                </div>
-                                <div class="col">
-                                    <input type="number" class="form-control" name="placement_{{ placement.name }}_2" placeholder="Enter z" step="any" value="{{ placement.placement[2] }}">
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                        {% for name, outline in corrected_component_outlines.items() %}
-                            {% if name == sbar[0] %}
-                                <div class="col">
-                                    <input type="number" class="form-control" name="outline_{{ name }}_0" placeholder="Enter width" step="any" value="{{ outline.coordinates[2][0] }}">
-                                </div>
-                                <div class="col">
-                                    <input type="number" class="form-control" name="outline_{{ name }}_1" placeholder="Enter height" step="any" value="{{ outline.coordinates[2][1] }}">
-                                </div>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-                    {% endfor %}
-                {% endif %}
-
                 <div class="row mb-2" id="existing-rows"></div>
             {% endif %}
             <div class="col">
@@ -148,7 +99,7 @@
             </div>
         </fieldset>
     </div>
-    <div id="warning-message" style="color: red; display: none;"></div> 
+    <div id="warning-message" style="color: red; display: none;"></div>
     <button type="button" class="btn btn-outline-primary" id="submit-btn">Submit Parameters</button>
 </form>
 {% endblock %}

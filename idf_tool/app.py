@@ -18,6 +18,11 @@ app = Flask(
     )
 app.secret_key = 'supersecretkey'
 
+app.config.update(
+    SESSION_COOKIE_SAMESITE='None',
+    SESSION_COOKIE_SECURE=True
+)
+
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), "uploads")
 app.config['EXPORT_FOLDER'] = os.path.join(os.getcwd(), "submits")
@@ -32,13 +37,13 @@ def allowed_file(filename):
 
 @app.route('/')
 def base():
-    fig_dir = url_for('static', filename='img/Soltech_logo.png')
+    fig_dir = url_for('static', filename='img/Soltech_Logo.png')
 
     return render_template('home.html', fig_dir=fig_dir, enable_drop=True)
 
 @app.route('/home_src')
 def home():
-    fig_dir = url_for('static', filename='img/Soltech_logo.png')
+    fig_dir = url_for('static', filename='img/Soltech_Logo.png')
 
     # Session retrieval
     graph_json = session.get('graph_json', None)
@@ -49,7 +54,7 @@ def home():
 def submit_file():
     print("submit_file")
     session.clear()
-    fig_dir = url_for('static', filename='img/Soltech_logo.png')
+    fig_dir = url_for('static', filename='img/Soltech_Logo.png')
 
     # File management
     file = request.files.get('file')
@@ -101,13 +106,12 @@ def submit_file():
 @app.route('/submit_parameters', methods=['POST'])
 def submit_parameters():
     print("submit_parameters")
-    fig_dir = url_for('static', filename='img/Soltech_logo.png')
+    fig_dir = url_for('static', filename='img/Soltech_Logo.png')
 
     # Session retrieval
     sbars = session.get('sbars', [])
     strings = session.get('strings', [])
     graph_json = session.get('graph_json', None)
-    front_end_sbar_data = session.get('front_end_sbar_data', [])
     filename = session.get('filename', None)
     corrected_component_placements = session.get('corrected_component_placements', None)
     corrected_component_outlines = session.get('corrected_component_outlines', None)
@@ -122,7 +126,8 @@ def submit_parameters():
         sbar_checkboxes_height[sbar] = bool(request.form.get(f'sbarheight_{sbar}'))
 
     # Data processing
-    idf.add_busbars(request.form, corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, front_end_sbar_data)
+    if request.form.get('new_sbar_name_dyn', None) is not None:
+        idf.add_busbars(request.form, corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, sbars)
 
     for sbar, value in sbar_checkboxes_180deg.items():
         if sbar not in sbar_checkboxes_180deg_history:
@@ -140,21 +145,19 @@ def submit_parameters():
 
     # Store session data
     session['new_file_content'] = new_file_content
-    session['Index_dyn_busbar'] = len(front_end_sbar_data)
     session['new_string_names'] = new_string_names
-    session['front_end_sbar_data'] = front_end_sbar_data
     session['corrected_component_placements'] = corrected_component_placements
     session['corrected_component_outlines'] = corrected_component_outlines
     session['sbar_checkboxes_180deg'] = sbar_checkboxes_180deg
     session['sbar_checkboxes_height'] = sbar_checkboxes_height
     session['sbar_checkboxes_180deg_history'] = sbar_checkboxes_180deg_history
 
-    return render_template('manipulate.html', manipulate_after_submit_parameters = True, front_end_sbar_data=front_end_sbar_data, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, sbar_checkboxes_180deg=sbar_checkboxes_180deg, sbar_checkboxes_height=sbar_checkboxes_height, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
+    return render_template('manipulate.html', manipulate_after_submit_parameters = True, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, sbar_checkboxes_180deg=sbar_checkboxes_180deg, sbar_checkboxes_height=sbar_checkboxes_height, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
 
 
 @app.route('/observe_src')
 def preview(): 
-    fig_dir = url_for('static', filename='img/Soltech_logo.png')
+    fig_dir = url_for('static', filename='img/Soltech_Logo.png')
 
     # Session retrieval 
     file_content = session.get('file_content', 'No file content found')
@@ -180,7 +183,7 @@ def preview():
 
 @app.route('/manipulate_src')
 def manipulate():
-    fig_dir = url_for('static', filename='img/Soltech_logo.png')
+    fig_dir = url_for('static', filename='img/Soltech_Logo.png')
 
     # Session retrieval
     strings = session.get('strings', [])
@@ -191,14 +194,13 @@ def manipulate():
     new_string_names = session.get('new_string_names', {})
     corrected_component_placements = session.get('corrected_component_placements', None)
     corrected_component_outlines = session.get('corrected_component_outlines', None)
-    front_end_sbar_data = session.get('front_end_sbar_data', [])
 
-    return render_template('manipulate.html', manipulate_after_submit_parameters = True, new_sbar_data_length = len(front_end_sbar_data), strings=strings, sbars=sbars, filename=filename, sbar_checkboxes_180deg=sbar_checkboxes_180deg, new_string_names=new_string_names, sbar_checkboxes_height=sbar_checkboxes_height, corrected_component_placements= corrected_component_placements, fig_dir=fig_dir, corrected_component_outlines=corrected_component_outlines, front_end_sbar_data=front_end_sbar_data)
+    return render_template('manipulate.html', manipulate_after_submit_parameters = True, strings=strings, sbars=sbars, filename=filename, sbar_checkboxes_180deg=sbar_checkboxes_180deg, new_string_names=new_string_names, sbar_checkboxes_height=sbar_checkboxes_height, corrected_component_placements= corrected_component_placements, fig_dir=fig_dir, corrected_component_outlines=corrected_component_outlines)
 
 @app.route('/remove_busbar', methods=['POST'])
 def remove_busbar():
     print("remove_busbar")
-    fig_dir = url_for('static', filename='img/Soltech_logo.png')
+    fig_dir = url_for('static', filename='img/Soltech_Logo.png')
 
     # Session retrieval
     new_string_names = session.get('new_string_names', {})
@@ -207,48 +209,33 @@ def remove_busbar():
     graph_json = session.get('graph_json', None)
     sbar_checkboxes_180deg = session.get('sbar_checkboxes_180deg', {})
     sbar_checkboxes_height = session.get('sbar_checkboxes_height', {})
-    front_end_sbar_data = session.get('front_end_sbar_data', [])
     filename = session.get('filename', None)
     corrected_component_placements = session.get('corrected_component_placements', None)
     corrected_component_outlines = session.get('corrected_component_outlines', None)
 
     # HTML Parsing
-    IdNr = request.form['IdNr']
+    sbar_to_delete = request.form['sbar']
 
     # Data processing
-    if IdNr == "1":
-        busbarId = int(request.form['busbar_id'])
-        del corrected_component_outlines[sbars[int(busbarId)]]
-        keys_to_delete = [id for id, placement in corrected_component_placements.items() if placement["name"] == sbars[int(busbarId)]]
-        for key in keys_to_delete:
-            del corrected_component_placements[key]
-        del sbar_checkboxes_height[sbars[int(busbarId)]]
-        del sbars[int(busbarId)]
-    elif IdNr == "2":
-        busbarId = int(request.form['busbar_id']) + len(sbars)
-        del corrected_component_outlines[front_end_sbar_data[int(busbarId) - len(sbars)][0]]
-        keys_to_delete = [id for id, placement in corrected_component_placements.items() if placement["name"] == front_end_sbar_data[int(busbarId) - len(sbars)][0]]
-        for key in keys_to_delete:
-            del corrected_component_placements[key]
-        del sbar_checkboxes_height[front_end_sbar_data[int(busbarId) - len(sbars)][0]]
-        del front_end_sbar_data[int(busbarId) - len(sbars)]
-    elif IdNr == "3":
-        busbarId = int(request.form['busbar_id']) + len(sbars) + session.get('Index_dyn_busbar', 0)
-        del corrected_component_outlines[front_end_sbar_data[int(busbarId) - len(sbars)][0]]
-        keys_to_delete = [id for id, placement in corrected_component_placements.items() if placement["name"] == front_end_sbar_data[int(busbarId) - len(sbars)][0]]
-        for key in keys_to_delete:
-            del corrected_component_placements[key]
-        del sbar_checkboxes_height[front_end_sbar_data[int(busbarId) - len(sbars)][0]]
-        del front_end_sbar_data[int(busbarId) - len(sbars)]
+    del corrected_component_outlines[sbar_to_delete]
+    keys_to_delete = [id for id, placement in corrected_component_placements.items() if placement["name"] == sbar_to_delete]
+    for key in keys_to_delete:
+        del corrected_component_placements[key]
+    del sbar_checkboxes_height[sbar_to_delete]
+    del sbar_checkboxes_180deg[sbar_to_delete]
+    sbars = [sbar for sbar in sbars if sbar != sbar_to_delete]
 
     # Store session data
     session['corrected_component_placements'] = corrected_component_placements
     session['corrected_component_outlines'] = corrected_component_outlines
-    return render_template('manipulate.html', manipulate_after_submit_parameters = True, new_sbar_data_length = len(front_end_sbar_data), front_end_sbar_data=front_end_sbar_data, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, sbar_checkboxes_180deg=sbar_checkboxes_180deg, sbar_checkboxes_height=sbar_checkboxes_height, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
+    session['sbars'] = sbars
+    session['sbar_checkboxes_height'] = sbar_checkboxes_height
+
+    return render_template('manipulate.html', manipulate_after_submit_parameters = True, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, sbar_checkboxes_180deg=sbar_checkboxes_180deg, sbar_checkboxes_height=sbar_checkboxes_height, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
 
 @app.route('/preview_src')
 def preview_src():
-    fig_dir = url_for('static', filename='img/Soltech_logo.png')
+    fig_dir = url_for('static', filename='img/Soltech_Logo.png')
 
     # Session retrieval
     file_content = session.get('file_content', 'No file content found')
@@ -258,7 +245,7 @@ def preview_src():
 
 @app.route('/visualize_src')
 def visualize_src():
-    fig_dir = url_for('static', filename='img/Soltech_logo.png')
+    fig_dir = url_for('static', filename='img/Soltech_Logo.png')
 
     # Session retrieval
     graph_json2 = session.get('graph_json2', None)
@@ -268,13 +255,13 @@ def visualize_src():
 
 @app.route('/about_src')
 def about():
-    fig_dir = url_for('static', filename='img/Soltech_logo.png')
+    fig_dir = url_for('static', filename='img/Soltech_Logo.png')
 
     return render_template('about.html', fig_dir=fig_dir)
 
 @app.route('/export', methods=['POST'])
 def export():
-    fig_dir = url_for('static', filename='img/Soltech_logo.png')
+    fig_dir = url_for('static', filename='img/Soltech_Logo.png')
 
     # Session retrieval
     filename = session.get('filename', None)
@@ -292,5 +279,19 @@ def request_entity_too_large(error):
     flash('File is too large')
     return redirect(request.url)
 
+@app.route('/generate_busbar_name', methods=['GET'])
+def generate_busbar_name():    
+    print("generate_busbar_name")
+    sbars = session.get('sbars', [])
+
+    base_name = sbars[-1].split('_')[0]
+    index = len(sbars)
+    
+    while True:
+        new_sbar_name = f'{base_name}_{index:03}'
+        if new_sbar_name not in sbars:
+            return jsonify(busbar_name=new_sbar_name)
+        index += 1
+
 if __name__ == '__main__':
-    app.run(port=5000, debug=True)
+    app.run(host='0.0.0.0', port=8000, debug=True, threaded=True)

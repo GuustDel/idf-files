@@ -37,6 +37,6 @@ echo "  /||\    Ensuring no more shall ever stray.         "
 echo "                                                     "                 
 echo "                  ~ THE END ~                        "                  
 
-start "" "http://127.0.0.1:5000"
+start "" "http://127.0.0.1:8000"
 python idf_tool/app.py
 pause

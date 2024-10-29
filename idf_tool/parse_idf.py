@@ -238,64 +238,38 @@ def regenerate_idf_file_content(file_path, corrected_component_outlines, correct
 
 import numpy as np
 
-def add_busbars(form_data, corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, front_end_sbar_data):
+def add_busbars(form_data, corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, sbars):
     # Initialize sbar_checkboxes
     for sbar in form_data.getlist('sbars'):
         sbar_checkboxes_180deg[sbar] = bool(form_data.get(f'sbar180deg_{sbar}'))
         sbar_checkboxes_height[sbar] = bool(form_data.get(f'sbarheight_{sbar}'))
 
     # Data processing
-    new_sbar_data = []
+    new_sbar_data = ()
+    new_sbar_name = form_data.get('new_sbar_name_dyn')
+    new_placement_x = form_data.get('new_placement_x_dyn')
+    new_placement_y = form_data.get('new_placement_y_dyn')
+    new_placement_z = form_data.get('new_placement_z_dyn')
+    new_outline_height = form_data.get('new_outline_length_dyn')
+    new_outline_width = form_data.get('new_outline_width_dyn')
+    new_sbar_data = (new_sbar_name, False, False, float(new_placement_x), float(new_placement_y), float(new_placement_z), float(new_outline_height), float(new_outline_width))
 
-    for i in range(len(form_data.getlist('new_sbar_name_dyn'))):
-        new_sbar_name = form_data.getlist('new_sbar_name_dyn')[i]
-        new_sbar180deg = bool(form_data.get(f'new_sbar180deg_dyn_{i}', False))
-        new_sbarheight = bool(form_data.get(f'new_sbarheight_dyn_{i}', False))
-        new_placement_x = form_data.getlist('new_placement_x_dyn')[i]
-        new_placement_y = form_data.getlist('new_placement_y_dyn')[i]
-        new_placement_z = form_data.getlist('new_placement_z_dyn')[i]
-        new_outline_height = form_data.getlist('new_outline_length_dyn')[i]
-        new_outline_width = form_data.getlist('new_outline_width_dyn')[i]
-        new_sbar_data.append([new_sbar_name, new_sbar180deg, new_sbarheight, float(new_placement_x), float(new_placement_y), float(new_placement_z), float(new_outline_height), float(new_outline_width)])
-        front_end_sbar_data.append([new_sbar_name, new_sbar180deg, new_sbarheight, float(new_placement_x), float(new_placement_y), float(new_placement_z), float(new_outline_height), float(new_outline_width)])
-
-    for i in range(len(form_data.getlist('new_sbar_name'))):
-        front_end_sbar_data[i][0] = form_data.getlist('new_sbar_name')[i]
-        front_end_sbar_data[i][1] = bool(form_data.get(f'new_sbar180deg_{i}', False))
-        front_end_sbar_data[i][2] = bool(form_data.get(f'new_sbarheight_{i}', False))
-
-        front_end_sbar_data[i][3] = float(form_data.get(f'placement_{front_end_sbar_data[i][0]}_0', front_end_sbar_data[i][3]))
-        front_end_sbar_data[i][4] = float(form_data.get(f'placement_{front_end_sbar_data[i][0]}_1', front_end_sbar_data[i][4]))
-        front_end_sbar_data[i][5] = float(form_data.get(f'placement_{front_end_sbar_data[i][0]}_2', front_end_sbar_data[i][5]))
-        front_end_sbar_data[i][6] = float(form_data.get(f'outline_{front_end_sbar_data[i][0]}_0', front_end_sbar_data[i][6]))
-        front_end_sbar_data[i][7] = float(form_data.get(f'outline_{front_end_sbar_data[i][0]}_1', front_end_sbar_data[i][7]))
-
-    for data in new_sbar_data:
-        add_busbar(True, corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, data)
-
-    for data in front_end_sbar_data:
-        add_busbar(False, corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, data)
+    sbars.append(new_sbar_name)
+    add_busbar(corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, new_sbar_data)
 
     return
 
-def add_busbar(is_new, corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, new_sbar_data):
+def add_busbar(corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, new_sbar_data):
     new_sbar_name, new_sbar180deg, new_sbarheight, new_placement_x, new_placement_y, new_placement_z, new_outline_height, new_outline_width = new_sbar_data
 
-    outline = np.array([[0.0, 0.0, 0.0], [float(new_outline_height), 0.0, 0.0], [float(new_outline_height), float(new_outline_width), 0.0], [0.0, float(new_outline_width), 0.0], [0.0, 0.0, 0.0]])
-    if new_sbar180deg:
-        placement = [float(new_placement_x) - float(new_outline_height), float(new_placement_y) - float(new_outline_width), float(new_placement_z), 0.0]
-    else:
-        placement = [float(new_placement_x), float(new_placement_y), float(new_placement_z), 0.0]
+    outline = [[0.0, 0.0, 0.0], [float(new_outline_height), 0.0, 0.0], [float(new_outline_height), float(new_outline_width), 0.0], [0.0, float(new_outline_width), 0.0], [0.0, 0.0, 0.0]]
+    placement = [float(new_placement_x), float(new_placement_y), float(new_placement_z), 0.0]
 
-    if is_new:
-        id = len([placement for placement in corrected_component_placements.values() if placement['component_type'] == 'busbar']) + 1
-        corrected_component_outlines[new_sbar_name] = {'component_type': 'busbar', 'height': new_sbarheight, 'coordinates': outline}
-        corrected_component_placements[f"BB{id:03}"] = {'name': new_sbar_name, 'component_type': 'busbar', 'placement': placement}
-        sbar_checkboxes_180deg[new_sbar_name] = new_sbar180deg
-        sbar_checkboxes_height[new_sbar_name] = new_sbarheight
-    else:
-        sbar_checkboxes_180deg[new_sbar_name] = new_sbar180deg
-        sbar_checkboxes_height[new_sbar_name] = new_sbarheight
+    id = len([placement for placement in corrected_component_placements.values() if placement['component_type'] == 'busbar'])
+    corrected_component_outlines[new_sbar_name] = {'component_type': 'busbar', 'height': new_sbarheight, 'coordinates': outline}
+    corrected_component_placements[f"BB{id:03}"] = {'name': new_sbar_name, 'component_type': 'busbar', 'placement': placement}
+    sbar_checkboxes_180deg[new_sbar_name] = new_sbar180deg
+    sbar_checkboxes_height[new_sbar_name] = new_sbarheight
 
 def change_string_names(corrected_component_placements, corrected_component_outlines, new_string_names, strings):
     for string_name, new_string_name in new_string_names.items():

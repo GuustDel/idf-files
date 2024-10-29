@@ -3,4 +3,3 @@ Flask-Session==0.8.0
 plotly==5.24.0
 Werkzeug==3.0.4
 numpy==2.1.1
-gunicorn
