@@ -3,15 +3,6 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-{% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <ul>
-          {% for message in messages %}
-            <li>{{ message }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-{% endwith %}
 
 <h1>IDF Generator</h1>
 {% if graph_json %}

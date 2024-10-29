@@ -1,5 +1,5 @@
-function removeBusbar(busbarId, IdNr) {
-    console.log('Removing busbar:', busbarId, IdNr);
+function removeBusbar(busbarId, IdNr, sbar) {
+    console.log('Removing busbar:', sbar);
 
     // Create a form data object
     const form = document.querySelector('form');
