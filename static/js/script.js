@@ -58,8 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
     addFloatConversion();
 
     function addNewRow(busbarName) {
-        const existingRows = document.getElementById('existing-rows').children.length;
-    
+        console.log("adding busbar", busbarName);
         const newRow = document.createElement('div');
         newRow.className = 'row mb-2';
         newRow.innerHTML = `
@@ -86,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <input type="number" class="form-control" name="new_placement_y_dyn" placeholder="Enter y" value="0.0" step="any">
             </div>
             <div class="col">
-                <input type="number" class="form-control" name="new_placement_z_dyn" placeholder="Enter z" value="0.0" step="any">
+                <input type="number" class="form-control" name="new_placement_z_dyn" placeholder="Enter z" value="0.92" step="any">
             </div>
             <div class="col">
                 <input type="number" class="form-control" name="new_outline_length_dyn" placeholder="Enter width" value="100.0" step="any">
@@ -135,7 +134,9 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 const busbarName = data.busbar_name;
                 console.log('Generating busbar name:', busbarName);
+                console.log('Adding new row');
                 addNewRow(busbarName);
+                console.log('Executing submit parameters');
                 executeSubmitParameters(busbarName);
             })
             .catch(error => console.error('Error:', error));

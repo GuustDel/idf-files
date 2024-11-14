@@ -1,0 +1,19 @@
+{
+  "name": "idf-files",
+  "version": "1.0.0",
+  "description": "This repository contains a web application built with Flask that allows users to upload, view, and modify IDF (Intermediate Data Format) files. The application provides a user-friendly interface for managing IDF files, including features for uploading, processing, and visualizing data.",
+  "main": "main.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^33.0.2",
+    "electron-packager": "^17.1.2"
+  }
+}
