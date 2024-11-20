@@ -290,8 +290,6 @@ def change_sbar_height(corrected_component_outlines, sbar_checkboxes_height):
             corrected_component_outlines[sbar]['height'] = str(float(corrected_component_outlines[sbar]['height']) + 2.0)
     return
 
-def export(file_path, output_file_path, new_lines):
-    filename = file_path.split('/')[-1].split('.')[0]
+def export(filename, output_file_path, new_lines):
     with open(output_file_path, 'w') as outfile:
             outfile.write(new_lines)
-    return send_file(output_file_path, as_attachment=True, download_name=f'{filename}_output.IDF')

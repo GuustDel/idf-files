@@ -37,11 +37,13 @@
     };
     Plotly.newPlot('plot', plot_data.data, layout, config);
   </script>
-  <form action="/export" method="post">
-    <div style="text-align: center;">
-        <button type="submit" class="btn btn-outline-primary" style="display: block; margin: 10px auto; width: 300px;">Export</button>
-    </div>
-  </form>
+  <div class="container mt-5">
+    <form action="/export" method="post">
+      <div style="text-align: center;">
+          <button type="submit" class="btn btn-outline-primary" style="display: block; margin: 10px auto; width: 300px;">Export</button>
+      </div>
+    </form>
+  </div>
 {% endif %}
 </div>
 {% endblock %}

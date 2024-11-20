@@ -287,17 +287,20 @@ def about():
 
 @app.route('/export', methods=['POST'])
 def export():
+    print("export")
     fig_dir = url_for('static', filename='img/Soltech_Logo.png')
 
     # Session retrieval
     filename = session.get('filename', None)
     new_lines = session.get('new_file_content', 'No new file content found')
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    
+    # Get the output directory from the form
     output_file_path = os.path.join(app.config['EXPORT_FOLDER'], filename)
     logging.info("Route: /export - Session data retrieved")
 
     # Export idf
-    idf.export(file_path, output_file_path, new_lines)
+    idf.export(filename, output_file_path, new_lines)
+    send_file(output_file_path, as_attachment=True, download_name=f'{filename}_output.IDF')
     logging.info("Route: /export - File exported")
     
     return render_template('home.html', fig_dir=fig_dir)
