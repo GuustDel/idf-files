@@ -157,60 +157,91 @@ def draw_board(board_outline, component_outlines, component_placements):
 
     return fig
 
-def translate(corrected_component_placements, corrected_component_outlines, sbar_checkboxes_180deg_history, form_data):
+def translate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, form_data):
     for _, placement in corrected_component_placements.items():
         name = placement['name']
         if placement['component_type'] == 'busbar':
-            if (len(sbar_checkboxes_180deg_history[name]) >= 2 and sbar_checkboxes_180deg_history[name][-1] == sbar_checkboxes_180deg_history[name][-2]) or (len(sbar_checkboxes_180deg_history[name]) == 1 and sbar_checkboxes_180deg_history[name][-1] == False):
+            if (len(w_sbar_prev[name]) >= 2 and w_sbar_prev[name][-1] == w_sbar_prev[name][-2]) or (len(w_sbar_prev[name]) == 1 and w_sbar_prev[name][-1] == False):
                 placement['placement'][0] = float(form_data.get(f'placement_{name}_0', placement['placement'][0]))
                 placement['placement'][1] = float(form_data.get(f'placement_{name}_1', placement['placement'][1]))
                 placement['placement'][2] = float(form_data.get(f'placement_{name}_2', placement['placement'][2]))
 
     for name, outline in corrected_component_outlines.items():
         if outline['component_type'] == 'busbar':
-            if (len(sbar_checkboxes_180deg_history[name]) >= 2 and sbar_checkboxes_180deg_history[name][-1] == sbar_checkboxes_180deg_history[name][-2]) or (len(sbar_checkboxes_180deg_history[name]) == 1 and sbar_checkboxes_180deg_history[name][-1] == False):
+            if (len(w_sbar_prev[name]) >= 2 and w_sbar_prev[name][-1] == w_sbar_prev[name][-2]) or (len(w_sbar_prev[name]) == 1 and w_sbar_prev[name][-1] == False):
                 outline['coordinates'][2][0] = float(form_data.get(f'outline_{name}_0', outline['coordinates'][2][0]))
                 outline['coordinates'][1][0] = float(form_data.get(f'outline_{name}_0', outline['coordinates'][2][0]))
                 outline['coordinates'][2][1] = float(form_data.get(f'outline_{name}_1', outline['coordinates'][2][1]))
                 outline['coordinates'][3][1] = float(form_data.get(f'outline_{name}_1', outline['coordinates'][2][1]))
     return
 
-def rotate(corrected_component_placements, corrected_component_outlines, sbar_checkboxes_180deg_history, sbar_checkboxes_180deg):
+def rotate0to180(id, corrected_component_placements, corrected_component_outlines):
+    outline = corrected_component_outlines[corrected_component_placements[id]['name']]['coordinates']
+    component_long_side = np.max(outline)
+    component_short_side = 5
+    if corrected_component_placements[id]['placement'][3] == 0:
+        corrected_component_placements[id]['placement'][0] += component_long_side
+        corrected_component_placements[id]['placement'][1] += component_short_side
+    elif corrected_component_placements[id]['placement'][3] == 90:
+        corrected_component_placements[id]['placement'][0] -= component_short_side
+        corrected_component_placements[id]['placement'][1] += component_long_side
+    elif corrected_component_placements[id]['placement'][3] == 180:
+        corrected_component_placements[id]['placement'][0] -= component_long_side
+        corrected_component_placements[id]['placement'][1] -= component_short_side
+    elif corrected_component_placements[id]['placement'][3] == 270 or corrected_component_placements[id]['placement'][3] == -90:
+        corrected_component_placements[id]['placement'][0] += component_short_side
+        corrected_component_placements[id]['placement'][1] -= component_long_side
+    corrected_component_placements[id]['placement'][3] = (corrected_component_placements[id]['placement'][3] + 180) % 360
+    return
+
+def rotate180to0(id, corrected_component_placements, corrected_component_outlines):
+    outline = corrected_component_outlines[corrected_component_placements[id]['name']]['coordinates']
+    component_long_side = np.max(outline)
+    component_short_side = 5
+    if corrected_component_placements[id]['placement'][3] == 180:
+        corrected_component_placements[id]['placement'][0] -= component_long_side
+        corrected_component_placements[id]['placement'][1] -= component_short_side
+    elif corrected_component_placements[id]['placement'][3] == 270 or corrected_component_placements[id]['placement'][3] == -90:
+        corrected_component_placements[id]['placement'][0] += component_short_side
+        corrected_component_placements[id]['placement'][1] -= component_long_side
+    elif corrected_component_placements[id]['placement'][3] == 0:
+        corrected_component_placements[id]['placement'][0] += component_long_side
+        corrected_component_placements[id]['placement'][1] += component_short_side
+    elif corrected_component_placements[id]['placement'][3] == 90:
+        corrected_component_placements[id]['placement'][0] -= component_short_side
+        corrected_component_placements[id]['placement'][1] += component_long_side
+    corrected_component_placements[id]['placement'][3] = (corrected_component_placements[id]['placement'][3] - 180) % 360
+    return
+
+def rotate_to_zero(corrected_component_placements, corrected_component_outlines, id, prev_angle):
+    if prev_angle == 90:
+        corrected_component_placements[id]['placement'][3] -= 90
+    elif prev_angle == 180:
+        rotate180to0(id, corrected_component_placements, corrected_component_outlines)
+    elif prev_angle == 270:
+        rotate180to0(id, corrected_component_placements, corrected_component_outlines)
+        corrected_component_placements[id]['placement'][3] -= 90
+
+def rotate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_sbar):
     for id, component_placement in corrected_component_placements.items():
         if component_placement['component_type'] == 'busbar':
-            for sbar, _ in sbar_checkboxes_180deg.items():
+            for sbar, _ in w_sbar.items():
                 if sbar == component_placement['name']:
-                    outline = corrected_component_outlines[corrected_component_placements[id]['name']]['coordinates']
-                    component_long_side = np.max(outline)
-                    component_short_side = 5
-                    if ((len(sbar_checkboxes_180deg_history[sbar]) >= 2) and (sbar_checkboxes_180deg_history[sbar][-2] == False) and (sbar_checkboxes_180deg_history[sbar][-1] == True)) or ((len(sbar_checkboxes_180deg_history[sbar]) == 1) and (sbar_checkboxes_180deg_history[sbar][-1] == True)):
-                        if corrected_component_placements[id]['placement'][3] == 0:
-                            corrected_component_placements[id]['placement'][0] += component_long_side
-                            corrected_component_placements[id]['placement'][1] += component_short_side
-                        elif corrected_component_placements[id]['placement'][3] == 90:
-                            corrected_component_placements[id]['placement'][0] -= component_short_side
-                            corrected_component_placements[id]['placement'][1] += component_long_side
-                        elif corrected_component_placements[id]['placement'][3] == 180:
-                            corrected_component_placements[id]['placement'][0] -= component_long_side
-                            corrected_component_placements[id]['placement'][1] -= component_short_side
-                        elif corrected_component_placements[id]['placement'][3] == 270 or corrected_component_placements[id]['placement'][3] == -90:
-                            corrected_component_placements[id]['placement'][0] += component_short_side
-                            corrected_component_placements[id]['placement'][1] -= component_long_side
-                        corrected_component_placements[id]['placement'][3] = (corrected_component_placements[id]['placement'][3] + 180) % 360
-                    elif (len(sbar_checkboxes_180deg_history[sbar]) >= 2) and (sbar_checkboxes_180deg_history[sbar][-2] == True) and (sbar_checkboxes_180deg_history[sbar][-1] == False):
-                        if corrected_component_placements[id]['placement'][3] == 180:
-                            corrected_component_placements[id]['placement'][0] -= component_long_side
-                            corrected_component_placements[id]['placement'][1] -= component_short_side
-                        elif corrected_component_placements[id]['placement'][3] == 270 or corrected_component_placements[id]['placement'][3] == -90:
-                            corrected_component_placements[id]['placement'][0] += component_short_side
-                            corrected_component_placements[id]['placement'][1] -= component_long_side
-                        elif corrected_component_placements[id]['placement'][3] == 0:
-                            corrected_component_placements[id]['placement'][0] += component_long_side
-                            corrected_component_placements[id]['placement'][1] += component_short_side
-                        elif corrected_component_placements[id]['placement'][3] == 90:
-                            corrected_component_placements[id]['placement'][0] -= component_short_side
-                            corrected_component_placements[id]['placement'][1] += component_long_side
-                        corrected_component_placements[id]['placement'][3] = (corrected_component_placements[id]['placement'][3] - 180) % 360
+                    prev_angle = w_sbar_prev[sbar][0]
+                    current_angle = w_sbar[sbar]
+                    print(f'prev_angle: {prev_angle}, current_angle: {current_angle}')
+                    
+                    # Rotate back to 0
+                    rotate_to_zero(corrected_component_placements, corrected_component_outlines, id, prev_angle)
+                    
+                    # Rotate to the current angle
+                    if current_angle == 90:
+                        corrected_component_placements[id]['placement'][3] += 90
+                    elif current_angle == 180:
+                        rotate0to180(corrected_component_placements, corrected_component_outlines, w_sbar)
+                    elif current_angle == 270:
+                        corrected_component_placements[id]['placement'][3] += 90
+                        rotate0to180(corrected_component_placements, corrected_component_outlines, w_sbar)
     return
 
 def regenerate_idf_file_content(file_path, corrected_component_outlines, corrected_component_placements):
@@ -238,11 +269,11 @@ def regenerate_idf_file_content(file_path, corrected_component_outlines, correct
 
 import numpy as np
 
-def add_busbars(form_data, corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, sbars):
+def add_busbars(form_data, corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, sbars):
     # Initialize sbar_checkboxes
     for sbar in form_data.getlist('sbars'):
-        sbar_checkboxes_180deg[sbar] = bool(form_data.get(f'sbar180deg_{sbar}'))
-        sbar_checkboxes_height[sbar] = bool(form_data.get(f'sbarheight_{sbar}'))
+        w_sbar[sbar] = bool(form_data.get(f'sbar180deg_{sbar}'))
+        z_sbar[sbar] = bool(form_data.get(f'sbarheight_{sbar}'))
 
     # Data processing
     new_sbar_data = ()
@@ -252,14 +283,14 @@ def add_busbars(form_data, corrected_component_outlines, corrected_component_pla
     new_placement_z = form_data.get('new_placement_z_dyn')
     new_outline_height = form_data.get('new_outline_length_dyn')
     new_outline_width = form_data.get('new_outline_width_dyn')
-    new_sbar_data = (new_sbar_name, False, False, float(new_placement_x), float(new_placement_y), float(new_placement_z), float(new_outline_height), float(new_outline_width))
+    new_sbar_data = (new_sbar_name, False, 0.3, float(new_placement_x), float(new_placement_y), float(new_placement_z), float(new_outline_height), float(new_outline_width))
 
     sbars.append(new_sbar_name)
-    add_busbar(corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, new_sbar_data)
+    add_busbar(corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, new_sbar_data)
 
     return
 
-def add_busbar(corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, new_sbar_data):
+def add_busbar(corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, new_sbar_data):
     new_sbar_name, new_sbar180deg, new_sbarheight, new_placement_x, new_placement_y, new_placement_z, new_outline_height, new_outline_width = new_sbar_data
 
     outline = [[0.0, 0.0, 0.0], [float(new_outline_height), 0.0, 0.0], [float(new_outline_height), float(new_outline_width), 0.0], [0.0, float(new_outline_width), 0.0], [0.0, 0.0, 0.0]]
@@ -268,8 +299,8 @@ def add_busbar(corrected_component_outlines, corrected_component_placements, sba
     id = len([placement for placement in corrected_component_placements.values() if placement['component_type'] == 'busbar'])
     corrected_component_outlines[new_sbar_name] = {'component_type': 'busbar', 'height': new_sbarheight, 'coordinates': outline}
     corrected_component_placements[f"BB{id:03}"] = {'name': new_sbar_name, 'component_type': 'busbar', 'placement': placement}
-    sbar_checkboxes_180deg[new_sbar_name] = new_sbar180deg
-    sbar_checkboxes_height[new_sbar_name] = new_sbarheight
+    w_sbar[new_sbar_name] = new_sbar180deg
+    z_sbar[new_sbar_name] = new_sbarheight
 
 def change_string_names(corrected_component_placements, corrected_component_outlines, new_string_names, strings):
     for string_name, new_string_name in new_string_names.items():
@@ -284,8 +315,8 @@ def change_string_names(corrected_component_placements, corrected_component_outl
                     break
     return
 
-def change_sbar_height(corrected_component_outlines, sbar_checkboxes_height):
-    for sbar, height in sbar_checkboxes_height.items():
+def change_sbar_height(corrected_component_outlines, z_sbar):
+    for sbar, height in z_sbar.items():
         if height:
             corrected_component_outlines[sbar]['height'] = str(float(corrected_component_outlines[sbar]['height']) + 2.0)
     return

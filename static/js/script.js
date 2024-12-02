@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function convertToFloat(input) {
         if (!isNaN(parseFloat(input.value))) {
-            input.value = parseFloat(input.value).toFixed(1);
+            input.value = parseFloat(input.value).toFixed(2);
         }
     }
 
@@ -74,6 +74,14 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="col">
                 <input type="checkbox" name="new_sbar180deg_dyn" value="false">
+            </div>
+            <div class="col">
+                <select name="new_sbar180deg_dyn", value="0">
+                    <option value="0" {% if sbar_checkboxes_180deg[sbar] == 0 %}selected{% endif %}>0</option>
+                    <option value="90" {% if sbar_checkboxes_180deg[sbar] == 90 %}selected{% endif %}>90</option>
+                    <option value="180" {% if sbar_checkboxes_180deg[sbar] == 180 %}selected{% endif %}>180</option>
+                    <option value="270" {% if sbar_checkboxes_180deg[sbar] == 270 %}selected{% endif %}>270</option>
+                </select>
             </div>
             <div class="col">
                 <input type="checkbox" name="new_sbarheight_dyn" value="false">

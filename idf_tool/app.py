@@ -26,7 +26,7 @@ app.config.update(
 
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), "uploads")
-app.config['EXPORT_FOLDER'] = os.path.join(os.getcwd(), "submits")
+app.config['EXPORT_FOLDER'] = os.path.join(os.getcwd(), "Costar")
 app.config['MAX_CONTENT_LENGTH'] = 15 * 1024  # 15kB max file size
 app.config['ALLOWED_EXTENSIONS'] = {'idf'}
 
@@ -86,9 +86,18 @@ def submit_file():
     fig = idf.draw_board(board_outline, component_outlines, component_placements)
     graph_json = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
-    sbar_checkboxes_180deg = session.get('sbar_checkboxes_180deg', {sbar: False for sbar in sbars})
-    sbar_checkboxes_height = session.get('sbar_checkboxes_height', {sbar: False for sbar in sbars})
+    w_sbar = {}
+    for sbar in sbars:
+        id = [id for id, placement in corrected_component_placements.items() if placement["name"] == sbar][0]
+        w_sbar[sbar] = corrected_component_placements[id]['placement'][3]
+    z_sbar = session.get('z_sbar', {sbar: False for sbar in sbars})
     new_string_names = session.get('new_string_names', None)
+
+    w_sbar_prev = {}
+    for sbar, value in w_sbar.items():
+        if sbar not in w_sbar_prev:
+            w_sbar_prev[sbar] = []
+        w_sbar_prev[sbar].append(value)
 
     if new_string_names is None:
         new_string_names = {string: '' for string in strings}
@@ -105,11 +114,12 @@ def submit_file():
     session['component_placements'] = component_placements
     session['corrected_component_outlines'] = corrected_component_outlines
     session['corrected_component_placements'] = corrected_component_placements
+    session['w_sbar'] = w_sbar
     session['sbars'] = sbars
     session['strings'] = strings
     logging.info("Route: /submit - Session data stored")
 
-    return render_template('home.html', strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, sbar_checkboxes_180deg=sbar_checkboxes_180deg, new_string_names=new_string_names, sbar_checkboxes_height=sbar_checkboxes_height, fig_dir=fig_dir)
+    return render_template('home.html', strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, w_sbar=w_sbar, new_string_names=new_string_names, z_sbar=z_sbar, fig_dir=fig_dir)
 
 @app.route('/submit_parameters', methods=['POST'])
 def submit_parameters():
@@ -123,32 +133,42 @@ def submit_parameters():
     filename = session.get('filename', None)
     corrected_component_placements = session.get('corrected_component_placements', None)
     corrected_component_outlines = session.get('corrected_component_outlines', None)
-    sbar_checkboxes_180deg_history = session.get('sbar_checkboxes_180deg_history', {})
+    w_sbar_prev = session.get('w_sbar_prev', {})
     logging.info("Route: /submit_parameters - Session data retrieved")
     
     # HTML Parsing
     new_string_names = {key[7:]: request.form[key] for key in request.form if key.startswith('string_')}
-    sbar_checkboxes_180deg = {}
-    sbar_checkboxes_height = {}
+    z_sbar = {}
+    w_sbar = {}
     for sbar in sbars:
-        sbar_checkboxes_180deg[sbar] = bool(request.form.get(f'sbar180deg_{sbar}'))
-        sbar_checkboxes_height[sbar] = bool(request.form.get(f'sbarheight_{sbar}'))
+        w_sbar[sbar] = request.form.get(f'sbar180deg_{sbar}', 0.0)
+        z_sbar[sbar] = request.form.get(f'sbarheight_{sbar}', False)
+    print("w_sbar", w_sbar)
     logging.info("Route: /submit_parameters - HTML parsed")
 
     # Data processing
     if request.form.get('new_sbar_name_dyn', None) is not None:
-        idf.add_busbars(request.form, corrected_component_outlines, corrected_component_placements, sbar_checkboxes_180deg, sbar_checkboxes_height, sbars)
+        idf.add_busbars(request.form, corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, sbars)
 
-    for sbar, value in sbar_checkboxes_180deg.items():
-        if sbar not in sbar_checkboxes_180deg_history:
-            sbar_checkboxes_180deg_history[sbar] = []
-        sbar_checkboxes_180deg_history[sbar].append(value)
+    for sbar, value in w_sbar.items():
+        if sbar not in w_sbar_prev:
+            w_sbar_prev[sbar] = []
+        w_sbar_prev[sbar].append(value)
+        if len(w_sbar_prev[sbar]) > 2:
+            w_sbar_prev[sbar].pop(0)
+    print("w_sbar_prev", w_sbar_prev)
 
-    idf.translate(corrected_component_placements, corrected_component_outlines, sbar_checkboxes_180deg_history, request.form)
-    idf.rotate(corrected_component_placements, corrected_component_outlines, sbar_checkboxes_180deg_history, sbar_checkboxes_180deg)
+    idf.translate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, request.form)
+    idf.rotate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_sbar)
+    print("corrected_component_placements_post", corrected_component_placements)
 
     idf.change_string_names(corrected_component_placements, corrected_component_outlines, new_string_names, strings)
-    idf.change_sbar_height(corrected_component_outlines, sbar_checkboxes_height)
+    idf.change_sbar_height(corrected_component_outlines, z_sbar)
+
+    w_sbar = {}
+    for sbar in sbars:
+        id = [id for id, placement in corrected_component_placements.items() if placement["name"] == sbar][0]
+        w_sbar[sbar] = corrected_component_placements[id]['placement'][3]
 
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     new_file_content = idf.regenerate_idf_file_content(file_path, corrected_component_outlines, corrected_component_placements)
@@ -159,12 +179,12 @@ def submit_parameters():
     session['new_string_names'] = new_string_names
     session['corrected_component_placements'] = corrected_component_placements
     session['corrected_component_outlines'] = corrected_component_outlines
-    session['sbar_checkboxes_180deg'] = sbar_checkboxes_180deg
-    session['sbar_checkboxes_height'] = sbar_checkboxes_height
-    session['sbar_checkboxes_180deg_history'] = sbar_checkboxes_180deg_history
+    session['w_sbar'] = w_sbar
+    session['z_sbar'] = z_sbar
+    session['w_sbar_prev'] = w_sbar_prev
     logging.info("Route: /submit_parameters - Session data stored")
 
-    return render_template('manipulate.html', manipulate_after_submit_parameters = True, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, sbar_checkboxes_180deg=sbar_checkboxes_180deg, sbar_checkboxes_height=sbar_checkboxes_height, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
+    return render_template('manipulate.html', manipulate_after_submit_parameters = True, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, w_sbar=w_sbar, z_sbar=z_sbar, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
 
 
 @app.route('/observe_src')
@@ -207,14 +227,14 @@ def manipulate():
     strings = session.get('strings', [])
     sbars = session.get('sbars', [])
     filename = session.get('filename', None)
-    sbar_checkboxes_180deg = session.get('sbar_checkboxes_180deg', {})
-    sbar_checkboxes_height = session.get('sbar_checkboxes_height', {})
+    w_sbar = session.get('w_sbar', {})
+    z_sbar = session.get('z_sbar', {})
     new_string_names = session.get('new_string_names', {})
     corrected_component_placements = session.get('corrected_component_placements', None)
     corrected_component_outlines = session.get('corrected_component_outlines', None)
     logging.info("Route: /manipulate_src - Session data retrieved")
 
-    return render_template('manipulate.html', manipulate_after_submit_parameters = True, strings=strings, sbars=sbars, filename=filename, sbar_checkboxes_180deg=sbar_checkboxes_180deg, new_string_names=new_string_names, sbar_checkboxes_height=sbar_checkboxes_height, corrected_component_placements= corrected_component_placements, fig_dir=fig_dir, corrected_component_outlines=corrected_component_outlines)
+    return render_template('manipulate.html', manipulate_after_submit_parameters = True, strings=strings, sbars=sbars, filename=filename, w_sbar=w_sbar, new_string_names=new_string_names, z_sbar=z_sbar, corrected_component_placements= corrected_component_placements, fig_dir=fig_dir, corrected_component_outlines=corrected_component_outlines)
 
 @app.route('/remove_busbar', methods=['POST'])
 def remove_busbar():
@@ -226,8 +246,8 @@ def remove_busbar():
     sbars = session.get('sbars', [])
     strings = session.get('strings', [])
     graph_json = session.get('graph_json', None)
-    sbar_checkboxes_180deg = session.get('sbar_checkboxes_180deg', {})
-    sbar_checkboxes_height = session.get('sbar_checkboxes_height', {})
+    w_sbar = session.get('w_sbar', {})
+    z_sbar = session.get('z_sbar', {})
     filename = session.get('filename', None)
     corrected_component_placements = session.get('corrected_component_placements', None)
     corrected_component_outlines = session.get('corrected_component_outlines', None)
@@ -242,8 +262,8 @@ def remove_busbar():
     keys_to_delete = [id for id, placement in corrected_component_placements.items() if placement["name"] == sbar_to_delete]
     for key in keys_to_delete:
         del corrected_component_placements[key]
-    del sbar_checkboxes_height[sbar_to_delete]
-    del sbar_checkboxes_180deg[sbar_to_delete]
+    del z_sbar[sbar_to_delete]
+    del w_sbar[sbar_to_delete]
     sbars = [sbar for sbar in sbars if sbar != sbar_to_delete]
     logging.info("Route: /remove_busbar - Data processed")
 
@@ -251,11 +271,11 @@ def remove_busbar():
     session['corrected_component_placements'] = corrected_component_placements
     session['corrected_component_outlines'] = corrected_component_outlines
     session['sbars'] = sbars
-    session['sbar_checkboxes_height'] = sbar_checkboxes_height
-    session['sbar_checkboxes_180deg'] = sbar_checkboxes_180deg
+    session['z_sbar'] = z_sbar
+    session['w_sbar'] = w_sbar
     logging.info("Route: /remove_busbar - Session data stored")
 
-    return render_template('manipulate.html', manipulate_after_submit_parameters = True, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, sbar_checkboxes_180deg=sbar_checkboxes_180deg, sbar_checkboxes_height=sbar_checkboxes_height, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
+    return render_template('manipulate.html', manipulate_after_submit_parameters = True, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, w_sbar=w_sbar, z_sbar=z_sbar, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
 
 @app.route('/preview_src')
 def preview_src():
@@ -301,6 +321,8 @@ def export():
     # Export idf
     idf.export(filename, output_file_path, new_lines)
     send_file(output_file_path, as_attachment=True, download_name=f'{filename}_output.IDF')
+    print("exported")
+
     logging.info("Route: /export - File exported")
     
     return render_template('home.html', fig_dir=fig_dir)

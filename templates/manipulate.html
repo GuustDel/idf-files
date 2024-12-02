@@ -61,10 +61,15 @@
                         <label for="sbar_{{ sbar }}">{{ sbar }}:</label>
                     </div>
                     <div class="col">
-                        <input type="checkbox" id="sbar180deg_{{ sbar }}" name="sbar180deg_{{ sbar }}" {% if sbar_checkboxes_180deg[sbar] %}checked{% endif %}>
+                        <select id="sbar180deg_{{ sbar }}" name="sbar180deg_{{ sbar }}">
+                            <option value="0" {% if w_sbar[sbar] == 0 %}selected{% endif %}>0</option>
+                            <option value="90" {% if w_sbar[sbar] == 90 %}selected{% endif %}>90</option>
+                            <option value="180" {% if w_sbar[sbar] == 180 %}selected{% endif %}>180</option>
+                            <option value="270" {% if w_sbar[sbar] == 270 %}selected{% endif %}>270</option>
+                        </select>
                     </div>
                     <div class="col">
-                        <input type="checkbox" id="sbarheight_{{ sbar }}" name="sbarheight_{{ sbar }}" {% if sbar_checkboxes_height[sbar] %}checked{% endif %}>
+                        <input type="checkbox" id="sbarheight_{{ sbar }}" name="sbarheight_{{ sbar }}" {% if z_sbar[sbar] %}checked{% endif %}>
                     </div>
                     {% for id, placement in corrected_component_placements.items() %}
                         {% if placement.name == sbar %}
