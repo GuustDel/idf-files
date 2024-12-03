@@ -73,9 +73,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <label name="new_sbar_name_dyn" value="${busbarName}">${busbarName}:</label>
             </div>
             <div class="col">
-                <input type="checkbox" name="new_sbar180deg_dyn" value="false">
-            </div>
-            <div class="col">
                 <select name="new_sbar180deg_dyn", value="0">
                     <option value="0" {% if sbar_checkboxes_180deg[sbar] == 0 %}selected{% endif %}>0</option>
                     <option value="90" {% if sbar_checkboxes_180deg[sbar] == 90 %}selected{% endif %}>90</option>
@@ -115,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const form = document.querySelector('form');
         const formData = new FormData(form);
         formData.append('new_sbar_name_dyn', busbarName)
-        formData.append('new_sbar180deg_dyn', 'False');
+        formData.append('new_sbar180deg_dyn', '0');
         formData.append('new_sbarheight_dyn', 'False');
 
         fetch('/submit_parameters', {

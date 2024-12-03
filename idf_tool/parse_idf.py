@@ -177,6 +177,7 @@ def translate(corrected_component_placements, corrected_component_outlines, w_sb
 
 def rotate0to180(id, corrected_component_placements, corrected_component_outlines):
     outline = corrected_component_outlines[corrected_component_placements[id]['name']]['coordinates']
+    
     component_long_side = np.max(outline)
     component_short_side = 5
     if corrected_component_placements[id]['placement'][3] == 0:
@@ -229,19 +230,18 @@ def rotate(corrected_component_placements, corrected_component_outlines, w_sbar_
                 if sbar == component_placement['name']:
                     prev_angle = w_sbar_prev[sbar][0]
                     current_angle = w_sbar[sbar]
-                    print(f'prev_angle: {prev_angle}, current_angle: {current_angle}')
-                    
-                    # Rotate back to 0
-                    rotate_to_zero(corrected_component_placements, corrected_component_outlines, id, prev_angle)
-                    
-                    # Rotate to the current angle
-                    if current_angle == 90:
-                        corrected_component_placements[id]['placement'][3] += 90
-                    elif current_angle == 180:
-                        rotate0to180(corrected_component_placements, corrected_component_outlines, w_sbar)
-                    elif current_angle == 270:
-                        corrected_component_placements[id]['placement'][3] += 90
-                        rotate0to180(corrected_component_placements, corrected_component_outlines, w_sbar)
+                    if prev_angle != current_angle:
+                        # Rotate back to 0
+                        rotate_to_zero(corrected_component_placements, corrected_component_outlines, id, prev_angle)
+                        
+                        # Rotate to the current angle
+                        if current_angle == 90:
+                            corrected_component_placements[id]['placement'][3] += 90
+                        elif current_angle == 180:
+                            rotate0to180(id, corrected_component_placements, corrected_component_outlines)
+                        elif current_angle == 270:
+                            corrected_component_placements[id]['placement'][3] += 90
+                            rotate0to180(id, corrected_component_placements, corrected_component_outlines)
     return
 
 def regenerate_idf_file_content(file_path, corrected_component_outlines, corrected_component_placements):
@@ -272,7 +272,7 @@ import numpy as np
 def add_busbars(form_data, corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, sbars):
     # Initialize sbar_checkboxes
     for sbar in form_data.getlist('sbars'):
-        w_sbar[sbar] = bool(form_data.get(f'sbar180deg_{sbar}'))
+        w_sbar[sbar] = float(form_data.get(f'sbar180deg_{sbar}'))
         z_sbar[sbar] = bool(form_data.get(f'sbarheight_{sbar}'))
 
     # Data processing
@@ -283,7 +283,7 @@ def add_busbars(form_data, corrected_component_outlines, corrected_component_pla
     new_placement_z = form_data.get('new_placement_z_dyn')
     new_outline_height = form_data.get('new_outline_length_dyn')
     new_outline_width = form_data.get('new_outline_width_dyn')
-    new_sbar_data = (new_sbar_name, False, 0.3, float(new_placement_x), float(new_placement_y), float(new_placement_z), float(new_outline_height), float(new_outline_width))
+    new_sbar_data = (new_sbar_name, 0.0, False, float(new_placement_x), float(new_placement_y), float(new_placement_z), float(new_outline_height), float(new_outline_width))
 
     sbars.append(new_sbar_name)
     add_busbar(corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, new_sbar_data)
@@ -292,7 +292,6 @@ def add_busbars(form_data, corrected_component_outlines, corrected_component_pla
 
 def add_busbar(corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, new_sbar_data):
     new_sbar_name, new_sbar180deg, new_sbarheight, new_placement_x, new_placement_y, new_placement_z, new_outline_height, new_outline_width = new_sbar_data
-
     outline = [[0.0, 0.0, 0.0], [float(new_outline_height), 0.0, 0.0], [float(new_outline_height), float(new_outline_width), 0.0], [0.0, float(new_outline_width), 0.0], [0.0, 0.0, 0.0]]
     placement = [float(new_placement_x), float(new_placement_y), float(new_placement_z), 0.0]
 
@@ -318,7 +317,7 @@ def change_string_names(corrected_component_placements, corrected_component_outl
 def change_sbar_height(corrected_component_outlines, z_sbar):
     for sbar, height in z_sbar.items():
         if height:
-            corrected_component_outlines[sbar]['height'] = str(float(corrected_component_outlines[sbar]['height']) + 2.0)
+            corrected_component_outlines[sbar]['height'] = str(float(corrected_component_outlines[sbar]['height']) + 2.3)
     return
 
 def export(filename, output_file_path, new_lines):

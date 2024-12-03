@@ -90,7 +90,7 @@ def submit_file():
     for sbar in sbars:
         id = [id for id, placement in corrected_component_placements.items() if placement["name"] == sbar][0]
         w_sbar[sbar] = corrected_component_placements[id]['placement'][3]
-    z_sbar = session.get('z_sbar', {sbar: False for sbar in sbars})
+    z_sbar = {sbar: False for sbar in sbars}
     new_string_names = session.get('new_string_names', None)
 
     w_sbar_prev = {}
@@ -98,7 +98,6 @@ def submit_file():
         if sbar not in w_sbar_prev:
             w_sbar_prev[sbar] = []
         w_sbar_prev[sbar].append(value)
-
     if new_string_names is None:
         new_string_names = {string: '' for string in strings}
 
@@ -115,8 +114,10 @@ def submit_file():
     session['corrected_component_outlines'] = corrected_component_outlines
     session['corrected_component_placements'] = corrected_component_placements
     session['w_sbar'] = w_sbar
+    session['z_sbar'] = z_sbar
     session['sbars'] = sbars
     session['strings'] = strings
+    session['w_sbar_prev'] = w_sbar_prev
     logging.info("Route: /submit - Session data stored")
 
     return render_template('home.html', strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, w_sbar=w_sbar, new_string_names=new_string_names, z_sbar=z_sbar, fig_dir=fig_dir)
@@ -134,16 +135,15 @@ def submit_parameters():
     corrected_component_placements = session.get('corrected_component_placements', None)
     corrected_component_outlines = session.get('corrected_component_outlines', None)
     w_sbar_prev = session.get('w_sbar_prev', {})
+    z_sbar = session.get('z_sbar', {sbar: False for sbar in sbars})
+    w_sbar = session.get('w_sbar', {sbar: 0.0 for sbar in sbars})
     logging.info("Route: /submit_parameters - Session data retrieved")
     
     # HTML Parsing
     new_string_names = {key[7:]: request.form[key] for key in request.form if key.startswith('string_')}
-    z_sbar = {}
-    w_sbar = {}
     for sbar in sbars:
-        w_sbar[sbar] = request.form.get(f'sbar180deg_{sbar}', 0.0)
-        z_sbar[sbar] = request.form.get(f'sbarheight_{sbar}', False)
-    print("w_sbar", w_sbar)
+        w_sbar[sbar] = float(request.form.get(f'sbar180deg_{sbar}', 0.0))
+        z_sbar[sbar] = bool(request.form.get(f'sbarheight_{sbar}', False))
     logging.info("Route: /submit_parameters - HTML parsed")
 
     # Data processing
@@ -156,16 +156,13 @@ def submit_parameters():
         w_sbar_prev[sbar].append(value)
         if len(w_sbar_prev[sbar]) > 2:
             w_sbar_prev[sbar].pop(0)
-    print("w_sbar_prev", w_sbar_prev)
 
     idf.translate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, request.form)
     idf.rotate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_sbar)
-    print("corrected_component_placements_post", corrected_component_placements)
 
     idf.change_string_names(corrected_component_placements, corrected_component_outlines, new_string_names, strings)
     idf.change_sbar_height(corrected_component_outlines, z_sbar)
-
-    w_sbar = {}
+    
     for sbar in sbars:
         id = [id for id, placement in corrected_component_placements.items() if placement["name"] == sbar][0]
         w_sbar[sbar] = corrected_component_placements[id]['placement'][3]
@@ -341,12 +338,9 @@ def generate_busbar_name():
     else:
         base_name = 'sbar'
     index = len(sbars)
-    print(f"Base name: {base_name}")
     while True:
         new_sbar_name = f'{base_name}_{index:03}'
-        print(f"New busbar name 1: {new_sbar_name}") 
         if new_sbar_name not in sbars:
-            print(f"New busbar name 2: {new_sbar_name}")
             return jsonify(busbar_name=new_sbar_name)
         index += 1
 
