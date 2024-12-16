@@ -59,6 +59,11 @@ pre {
     margin: 0 10px 20px 10px;
 }
 
+.custom-col2 {
+    padding: 0; /* Adjust the padding value as needed */
+    margin: 20px 0 0 0;
+}
+
 fieldset {
     border: 1px solid #ccc; /* Optional: Add a border */
     border-radius: 15px; /* Adjust the radius as needed */

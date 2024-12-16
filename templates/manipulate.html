@@ -18,6 +18,76 @@
                     <input type="text" id="string_{{ string }}" name="string_{{ string }}" {% if new_string_names %} value="{{ new_string_names.get(string, '') }}" {% endif %}>
                 </div>
                 {% endfor %}
+                <div class="row custom-col2">
+                    <div class="col"></div>
+                    <div class="col"></div>
+                    <div class="col">
+                        <span>w</span>
+                    </div>
+                    <div class="col">
+                        <span>x</span>
+                    </div>
+                    <div class="col">
+                        <span>y</span>
+                    </div>
+                    <div class="col">
+                        <span>z</span>
+                    </div>
+                    <div class="col">
+                        <span>width</span>
+                    </div>
+                    <div class="col">
+                        <span>height</span>
+                    </div>
+                </div>
+                {% for id, placement in corrected_component_placements.items() %}
+                {% if placement.component_type == "string" %}
+                <div class="row mb-2">
+                    <div class="col">
+                        <button type="button" class="btn btn-danger" onclick="removeBusbar('{{string}}')">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3" viewBox="0 0 16 16">
+                                <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="col">
+                        <label for="string_{{ id }}">{{ id }}:</label>
+                    </div>
+                    <div class="col">
+                        <select id="string180deg_{{ id }}" name="string180deg_{{ id }}">
+                            <option value="0" {% if w_string[id] == 0 %}selected{% endif %}>0</option>
+                            <option value="90" {% if w_string[id] == 90 %}selected{% endif %}>90</option>
+                            <option value="180" {% if w_string[id] == 180 %}selected{% endif %}>180</option>
+                            <option value="270" {% if w_string[id] == 270 %}selected{% endif %}>270</option>
+                        </select>
+                    </div>
+                    <div class="col">
+                        <input type="number" class="form-control" name="placement_{{ id }}_0" placeholder="Enter a number" value="{{ placement.placement[0] }}">
+                    </div>
+                    <div class="col">
+                        <input type="number" class="form-control" name="placement_{{ id }}_1" placeholder="Enter a number" value="{{ placement.placement[1] }}">
+                    </div>
+                    <div class="col">
+                        <input type="number" class="form-control" name="placement_{{ id }}_2" placeholder="Enter a number" value="{{ placement.placement[2] }}">
+                    </div>
+                    {% for name, outline in corrected_component_outlines.items() %} 
+                    {% if name == placement.name %}
+                    <div class="col">
+                        <input type="number" class="form-control" name="outline_{{ id }}_0" placeholder="Enter a number" value="{{ outline.widthheight[0][0] }}">
+                    </div>
+                    <div class="col">
+                        <input type="number" class="form-control" name="outline_{{ id }}_1" placeholder="Enter a number" value="{{ outline.widthheight[0][1] }}">
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endfor %}
+                <div class="row mb-2" id="existing-rows"></div>
+                <div class="col">
+                    <button type="button" style="width: 500px;" class="btn btn-secondary" id="add-row-btn2">Add</button>
+                </div>
             {% endif %}
         </fieldset>
         <fieldset class="row custom-col border border-2 rounded-0" style="border-color: #ccc">
@@ -26,7 +96,7 @@
                 <div class="col"></div>
                 <div class="col"></div>
                 <div class="col">
-                    <span>180 Degree</span>
+                    <span>w</span>
                 </div>
                 <div class="col">
                     <span>Insulation</span>
@@ -57,9 +127,13 @@
                             </svg>
                         </button>
                     </div>
+                    {% for id, placement in corrected_component_placements.items() %}
+                    {% if placement.name == sbar %}
                     <div class="col">
-                        <label for="sbar_{{ sbar }}">{{ sbar }}:</label>
+                        <label for="sbar_{{ sbar }}">{{ id }}:</label>
                     </div>
+                    {% endif %}
+                    {% endfor %}
                     <div class="col">
                         <select id="sbar180deg_{{ sbar }}" name="sbar180deg_{{ sbar }}">
                             <option value="0" {% if w_sbar[sbar] == 0 %}selected{% endif %}>0</option>

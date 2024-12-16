@@ -1,7 +1,21 @@
 import numpy as np
 import os
 import plotly.graph_objects as go
-from flask import send_file
+from collections import Counter
+
+def most_common_value(lst):
+    if not lst:
+        return None  # Handle empty list case
+    
+    # Filter out 0 values
+    filtered_lst = [value for value in lst if value != 0]
+    
+    if not filtered_lst:
+        return None  # Handle case where all values were 0
+    
+    counter = Counter(filtered_lst)
+    most_common = counter.most_common(1)[0][0]  # Get the most common value
+    return most_common
 
 def board_outline(file_path):
     with open(file_path, 'r') as f:
@@ -68,7 +82,7 @@ def component_outlines(file_path):
                 name = parts[1].strip()
                 component_type = parts[3].strip()
                 height = parts[-1].strip().split()[-1]
-                current_component = {name: {'component_type': component_type, 'height': height, 'coordinates': []}}
+                current_component = {name: {'component_type': component_type, 'height': height, 'coordinates': [], "widthheight": []}}
                 component_outlines.update(current_component)
                 in_mechanical_section = False
                 continue
@@ -80,8 +94,10 @@ def component_outlines(file_path):
                 if len(parts) == 4:
                     component_name = list(current_component.keys())[0]
                     component_outlines[component_name]['coordinates'].append([float(parts[1]), float(parts[2]), float(parts[3])])
-
-        return component_outlines
+    for name, outline in component_outlines.items():
+        outline['widthheight'].append([outline['coordinates'][0][0], most_common_value([coordinate[1] for coordinate in outline['coordinates']])])
+        print(name, outline['widthheight'])
+    return component_outlines
     
 def get_component_names_by_type(component_outlines):
     sbars = []
@@ -127,7 +143,7 @@ def draw_board(board_outline, component_outlines, component_placements):
             x_corr = x_outline + x_offset
             y_corr = y_outline + y_offset
             z_corr = z_outline + z_offset
-        fig.add_trace(go.Scatter(x=x_corr, y=y_corr, mode='lines', name=component_placement['name']))
+        fig.add_trace(go.Scatter(x=x_corr, y=y_corr, mode='lines', name=f"{component_id} {component_placement['name']}"))
 
     # Add component placements as scatter points
     for component_id, component_placement in component_placements.items():
@@ -135,7 +151,7 @@ def draw_board(board_outline, component_outlines, component_placements):
             x=[component_placement['placement'][0]],
             y=[component_placement['placement'][1]],
             mode='markers',
-            marker=dict(color='red', size=5),
+            marker=dict(color='red', size=4),
             showlegend=False  
         ))
 
@@ -157,29 +173,42 @@ def draw_board(board_outline, component_outlines, component_placements):
 
     return fig
 
-def translate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, form_data):
-    for _, placement in corrected_component_placements.items():
-        name = placement['name']
+def translate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_string_prev, form_data):
+    for id, placement in corrected_component_placements.items():
         if placement['component_type'] == 'busbar':
-            if (len(w_sbar_prev[name]) >= 2 and w_sbar_prev[name][-1] == w_sbar_prev[name][-2]) or (len(w_sbar_prev[name]) == 1 and w_sbar_prev[name][-1] == False):
-                placement['placement'][0] = float(form_data.get(f'placement_{name}_0', placement['placement'][0]))
-                placement['placement'][1] = float(form_data.get(f'placement_{name}_1', placement['placement'][1]))
-                placement['placement'][2] = float(form_data.get(f'placement_{name}_2', placement['placement'][2]))
+            if w_sbar_prev[placement["name"]][-1] == w_sbar_prev[placement["name"]][-2]:
+                placement['placement'][0] = float(form_data.get(f'placement_{id}_0', placement['placement'][0]))
+                placement['placement'][1] = float(form_data.get(f'placement_{id}_1', placement['placement'][1]))
+                placement['placement'][2] = float(form_data.get(f'placement_{id}_2', placement['placement'][2]))
+        elif placement['component_type'] == 'string':
+            if w_string_prev[id][-1] == w_string_prev[id][-2]:
+                placement['placement'][0] = float(form_data.get(f'placement_{id}_0', placement['placement'][0]))
+                placement['placement'][1] = float(form_data.get(f'placement_{id}_1', placement['placement'][1]))
+                placement['placement'][2] = float(form_data.get(f'placement_{id}_2', placement['placement'][2]))
 
     for name, outline in corrected_component_outlines.items():
         if outline['component_type'] == 'busbar':
-            if (len(w_sbar_prev[name]) >= 2 and w_sbar_prev[name][-1] == w_sbar_prev[name][-2]) or (len(w_sbar_prev[name]) == 1 and w_sbar_prev[name][-1] == False):
+            if w_sbar_prev[name][-1] == w_sbar_prev[name][-2]:                
                 outline['coordinates'][2][0] = float(form_data.get(f'outline_{name}_0', outline['coordinates'][2][0]))
                 outline['coordinates'][1][0] = float(form_data.get(f'outline_{name}_0', outline['coordinates'][2][0]))
                 outline['coordinates'][2][1] = float(form_data.get(f'outline_{name}_1', outline['coordinates'][2][1]))
                 outline['coordinates'][3][1] = float(form_data.get(f'outline_{name}_1', outline['coordinates'][2][1]))
+        # elif outline['component_type'] == 'string':
+        #     if w_string_prev[id][-1] == w_string_prev[id][-2]:
+        #         outline['coordinates'][2][0] = float(form_data.get(f'outline_{name}_0', outline['coordinates'][2][0]))
+        #         outline['coordinates'][1][0] = float(form_data.get(f'outline_{name}_0', outline['coordinates'][2][0]))
+        #         outline['coordinates'][2][1] = float(form_data.get(f'outline_{name}_1', outline['coordinates'][2][1]))
+        #         outline['coordinates'][3][1] = float(form_data.get(f'outline_{name}_1', outline['coordinates'][2][1]))          
     return
 
 def rotate0to180(id, corrected_component_placements, corrected_component_outlines):
     outline = corrected_component_outlines[corrected_component_placements[id]['name']]['coordinates']
-    
-    component_long_side = np.max(outline)
-    component_short_side = 5
+    if corrected_component_placements[id]['component_type'] == "string":
+        component_long_side = corrected_component_outlines[corrected_component_placements[id]['name']]['widthheight'][0][0]
+        component_short_side = corrected_component_outlines[corrected_component_placements[id]['name']]['widthheight'][0][1]
+    else:
+        component_long_side = np.max(outline)
+        component_short_side = 5
     if corrected_component_placements[id]['placement'][3] == 0:
         corrected_component_placements[id]['placement'][0] += component_long_side
         corrected_component_placements[id]['placement'][1] += component_short_side
@@ -197,8 +226,12 @@ def rotate0to180(id, corrected_component_placements, corrected_component_outline
 
 def rotate180to0(id, corrected_component_placements, corrected_component_outlines):
     outline = corrected_component_outlines[corrected_component_placements[id]['name']]['coordinates']
-    component_long_side = np.max(outline)
-    component_short_side = 5
+    if corrected_component_placements[id]['component_type'] == "string":
+        component_long_side = corrected_component_outlines[corrected_component_placements[id]['name']]['widthheight'][0][0]
+        component_short_side = corrected_component_outlines[corrected_component_placements[id]['name']]['widthheight'][0][1]
+    else:
+        component_long_side = np.max(outline)
+        component_short_side = 5
     if corrected_component_placements[id]['placement'][3] == 180:
         corrected_component_placements[id]['placement'][0] -= component_long_side
         corrected_component_placements[id]['placement'][1] -= component_short_side
@@ -223,25 +256,39 @@ def rotate_to_zero(corrected_component_placements, corrected_component_outlines,
         rotate180to0(id, corrected_component_placements, corrected_component_outlines)
         corrected_component_placements[id]['placement'][3] -= 90
 
-def rotate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_sbar):
+def rotate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_sbar, w_string_prev, w_string):
     for id, component_placement in corrected_component_placements.items():
-        if component_placement['component_type'] == 'busbar':
-            for sbar, _ in w_sbar.items():
-                if sbar == component_placement['name']:
-                    prev_angle = w_sbar_prev[sbar][0]
-                    current_angle = w_sbar[sbar]
-                    if prev_angle != current_angle:
-                        # Rotate back to 0
-                        rotate_to_zero(corrected_component_placements, corrected_component_outlines, id, prev_angle)
-                        
-                        # Rotate to the current angle
-                        if current_angle == 90:
-                            corrected_component_placements[id]['placement'][3] += 90
-                        elif current_angle == 180:
-                            rotate0to180(id, corrected_component_placements, corrected_component_outlines)
-                        elif current_angle == 270:
-                            corrected_component_placements[id]['placement'][3] += 90
-                            rotate0to180(id, corrected_component_placements, corrected_component_outlines)
+        for sbar, _ in w_sbar.items():
+            if sbar == component_placement['name']:
+                prev_angle = w_sbar_prev[sbar][0]
+                current_angle = w_sbar[sbar]
+                if prev_angle != current_angle:
+                    # Rotate back to 0
+                    rotate_to_zero(corrected_component_placements, corrected_component_outlines, id, prev_angle)
+                    
+                    # Rotate to the current angle
+                    if current_angle == 90:
+                        corrected_component_placements[id]['placement'][3] += 90
+                    elif current_angle == 180:
+                        rotate0to180(id, corrected_component_placements, corrected_component_outlines)
+                    elif current_angle == 270:
+                        corrected_component_placements[id]['placement'][3] += 90
+                        rotate0to180(id, corrected_component_placements, corrected_component_outlines)
+    for id, _ in w_string.items():
+        prev_angle = w_string_prev[id][0]
+        current_angle = w_string[id]
+        if prev_angle != current_angle:
+            # Rotate back to 0
+            rotate_to_zero(corrected_component_placements, corrected_component_outlines, id, prev_angle)
+            
+            # Rotate to the current angle
+            if current_angle == 90:
+                corrected_component_placements[id]['placement'][3] += 90
+            elif current_angle == 180:
+                rotate0to180(id, corrected_component_placements, corrected_component_outlines)
+            elif current_angle == 270:
+                corrected_component_placements[id]['placement'][3] += 90
+                rotate0to180(id, corrected_component_placements, corrected_component_outlines)
     return
 
 def regenerate_idf_file_content(file_path, corrected_component_outlines, corrected_component_placements):
@@ -269,7 +316,7 @@ def regenerate_idf_file_content(file_path, corrected_component_outlines, correct
 
 import numpy as np
 
-def add_busbars(form_data, corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, sbars):
+def add_components(form_data, corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, sbars):
     # Initialize sbar_checkboxes
     for sbar in form_data.getlist('sbars'):
         w_sbar[sbar] = float(form_data.get(f'sbar180deg_{sbar}'))
@@ -286,11 +333,11 @@ def add_busbars(form_data, corrected_component_outlines, corrected_component_pla
     new_sbar_data = (new_sbar_name, 0.0, False, float(new_placement_x), float(new_placement_y), float(new_placement_z), float(new_outline_height), float(new_outline_width))
 
     sbars.append(new_sbar_name)
-    add_busbar(corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, new_sbar_data)
+    add_component(corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, new_sbar_data)
 
     return
 
-def add_busbar(corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, new_sbar_data):
+def add_component(corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, new_sbar_data):
     new_sbar_name, new_sbar180deg, new_sbarheight, new_placement_x, new_placement_y, new_placement_z, new_outline_height, new_outline_width = new_sbar_data
     outline = [[0.0, 0.0, 0.0], [float(new_outline_height), 0.0, 0.0], [float(new_outline_height), float(new_outline_width), 0.0], [0.0, float(new_outline_width), 0.0], [0.0, 0.0, 0.0]]
     placement = [float(new_placement_x), float(new_placement_y), float(new_placement_z), 0.0]
