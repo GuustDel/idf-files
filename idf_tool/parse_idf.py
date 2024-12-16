@@ -173,7 +173,7 @@ def draw_board(board_outline, component_outlines, component_placements):
 
     return fig
 
-def translate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_string_prev, form_data):
+def translate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_string_prev, form_data, widthheight_prev):
     for id, placement in corrected_component_placements.items():
         if placement['component_type'] == 'busbar':
             if w_sbar_prev[placement["name"]][-1] == w_sbar_prev[placement["name"]][-2]:
@@ -188,17 +188,22 @@ def translate(corrected_component_placements, corrected_component_outlines, w_sb
 
     for name, outline in corrected_component_outlines.items():
         if outline['component_type'] == 'busbar':
-            if w_sbar_prev[name][-1] == w_sbar_prev[name][-2]:                
+            if w_sbar_prev[name][-1] == w_sbar_prev[name][-2]:
                 outline['coordinates'][2][0] = float(form_data.get(f'outline_{name}_0', outline['coordinates'][2][0]))
                 outline['coordinates'][1][0] = float(form_data.get(f'outline_{name}_0', outline['coordinates'][2][0]))
                 outline['coordinates'][2][1] = float(form_data.get(f'outline_{name}_1', outline['coordinates'][2][1]))
                 outline['coordinates'][3][1] = float(form_data.get(f'outline_{name}_1', outline['coordinates'][2][1]))
-        # elif outline['component_type'] == 'string':
-        #     if w_string_prev[id][-1] == w_string_prev[id][-2]:
-        #         outline['coordinates'][2][0] = float(form_data.get(f'outline_{name}_0', outline['coordinates'][2][0]))
-        #         outline['coordinates'][1][0] = float(form_data.get(f'outline_{name}_0', outline['coordinates'][2][0]))
-        #         outline['coordinates'][2][1] = float(form_data.get(f'outline_{name}_1', outline['coordinates'][2][1]))
-        #         outline['coordinates'][3][1] = float(form_data.get(f'outline_{name}_1', outline['coordinates'][2][1]))          
+        elif outline['component_type'] == 'string':
+            for id, _ in w_string_prev.items():
+                if corrected_component_placements[id]['name'] == name:
+                    if w_string_prev[id][-1] == w_string_prev[id][-2]:
+                        if widthheight_prev[name][-1] != widthheight_prev[name][-2]:
+                            outline['coordinates'] = [[0.0, 0.0, 0.0],
+                                                    [float(form_data.get(f'outline_{name}_0', outline['coordinates'][1][0])), 0.0, 0.0],
+                                                    [float(form_data.get(f'outline_{name}_0', outline['coordinates'][1][0])), float(form_data.get(f'outline_{name}_1', outline['coordinates'][2][1])), 0.0],
+                                                    [0.0, float(form_data.get(f'outline_{name}_1', outline['coordinates'][2][1])), 0.0],
+                                                    [0.0, 0.0, 0.0]]
+                            outline['widthheight'] = [[float(form_data.get(f'outline_{name}_0', outline['coordinates'][1][0])), float(form_data.get(f'outline_{name}_1', outline['coordinates'][2][1]))]]
     return
 
 def rotate0to180(id, corrected_component_placements, corrected_component_outlines):

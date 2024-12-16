@@ -110,6 +110,13 @@ def submit_file():
             w_string_prev[id] = []
         w_string_prev[id].append(value)
 
+    widthheight_prev = {}
+    for name, outline in corrected_component_outlines.items():
+        if outline['component_type'] == 'string':
+            widthheight_prev[name] = outline['widthheight']
+        
+    print("widthheight_prev", widthheight_prev)
+
     if new_string_names is None:
         new_string_names = {string: '' for string in strings}
 
@@ -119,6 +126,7 @@ def submit_file():
 
     # Store session data
     session['file_content'] = file_content
+    session['widthheight_prev'] = widthheight_prev
     session['graph_json'] = graph_json
     session['board_outline'] = board_outline
     session['component_outlines'] = component_outlines
@@ -153,6 +161,7 @@ def submit_parameters():
     w_string = session.get('w_string', {})
     z_sbar = session.get('z_sbar', {sbar: False for sbar in sbars})
     w_sbar = session.get('w_sbar', {sbar: 0.0 for sbar in sbars})
+    widthheight_prev = session.get('widthheight_prev', {string: [0, 0] for string in strings})
     logging.info("Route: /submit_parameters - Session data retrieved")
     
     # HTML Parsing
@@ -189,7 +198,14 @@ def submit_parameters():
         if len(w_string_prev[string]) > 2:
             w_string_prev[string].pop(0)
 
-    idf.translate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_string_prev, request.form)
+    for name, component in corrected_component_outlines.items():
+        if component['component_type'] == 'string':
+            widthheight_prev[name].append(component['widthheight'])
+            if len(widthheight_prev[name]) > 2:
+                widthheight_prev[name].pop(0)
+
+
+    idf.translate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_string_prev, request.form, widthheight_prev=widthheight_prev)
     idf.rotate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_sbar, w_string_prev, w_string)
 
     idf.change_string_names(corrected_component_placements, corrected_component_outlines, new_string_names, strings)
@@ -202,7 +218,12 @@ def submit_parameters():
     for id, placement in corrected_component_placements.items():
         if placement["component_type"] == "string":
             w_string[id] = corrected_component_placements[id]['placement'][3]
-    print(w_string)
+
+    for name, component in corrected_component_outlines.items():
+        if component['component_type'] == 'string':
+            widthheight_prev[name] = component['widthheight']
+            if len(widthheight_prev[name]) > 2:
+                widthheight_prev[name].pop(0)
 
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     new_file_content = idf.regenerate_idf_file_content(file_path, corrected_component_outlines, corrected_component_placements)
@@ -214,6 +235,7 @@ def submit_parameters():
     session['corrected_component_placements'] = corrected_component_placements
     session['corrected_component_outlines'] = corrected_component_outlines
     session['w_sbar'] = w_sbar
+    session['widthheight_prev'] = widthheight_prev
     session['w_string'] = w_string
     session['z_sbar'] = z_sbar
     session['w_sbar_prev'] = w_sbar_prev
