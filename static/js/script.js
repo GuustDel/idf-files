@@ -1,6 +1,7 @@
 function removeBusbar(sbar) {
     console.log('Removing busbar:', sbar);
 
+    
     // Create a form data object
     const form = document.querySelector('form');
     const formData = new FormData(form);

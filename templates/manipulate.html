@@ -18,21 +18,49 @@
         </fieldset>
         <fieldset class="row custom-col border border-2 rounded-0" style="border-color: #ccc">
             <legend>Strings</legend>
+            <div class="row custom-col2">
+                <div class="col"></div>
+                <div class="col">New Name</div>
+                <div class="col">
+                    <span>Width</span>
+                </div>
+                <div class="col">
+                    <span>Height</span>
+                </div>
+                </div>
+                {% for name, outline in corrected_component_outlines.items() %} 
+                {% if outline.component_type == "string" %}
+                <div class="row custom-col2">
+                    <div class="col">
+                        <label for="string_{{ name }}">{{ name }}:</label>
+                    </div>
+                    <div class="col">
+                        <input type="text" class="form-control" id="string_{{ name }}" name="string_{{ name }}" value="{{ new_string_names.get(name, '') }}">
+                    </div>
+                    <div class="col">
+                        <input type="number" class="form-control" name="outline_{{ name }}_0" placeholder="Enter a number" value="{{ outline.widthheight[0][0] }}">
+                    </div>
+                    <div class="col">
+                        <input type="number" class="form-control" name="outline_{{ name }}_1" placeholder="Enter a number" value="{{ outline.widthheight[0][1] }}">
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
             {% if strings %}
                 <div class="row custom-col2">
                     <div class="col"></div>
                     <div class="col"></div>
                     <div class="col">
-                        <span>w</span>
+                        <span>W</span>
                     </div>
                     <div class="col">
-                        <span>x</span>
+                        <span>X</span>
                     </div>
                     <div class="col">
-                        <span>y</span>
+                        <span>Y</span>
                     </div>
                     <div class="col">
-                        <span>z</span>
+                        <span>Z</span>
                     </div>
                 </div>
                 {% for id, placement in corrected_component_placements.items() %}
@@ -69,34 +97,6 @@
                 </div>
                 {% endif %}
                 {% endfor %}
-                <div class="row custom-col2">
-                <div class="col"></div>
-                <div class="col">new name</div>
-                <div class="col">
-                    <span>width</span>
-                </div>
-                <div class="col">
-                    <span>height</span>
-                </div>
-                </div>
-                {% for name, outline in corrected_component_outlines.items() %} 
-                {% if outline.component_type == "string" %}
-                <div class="row custom-col2">
-                    <div class="col">
-                        <label for="string_{{ name }}">{{ name }}:</label>
-                    </div>
-                    <div class="col">
-                        <input type="text" class="form-control" id="string_{{ string }}" name="string_{{ string }}" {% if new_string_names %} value="{{ new_string_names.get(string, '') }}" {% endif %}>
-                    </div>
-                    <div class="col">
-                        <input type="number" class="form-control" name="outline_{{ name }}_0" placeholder="Enter a number" value="{{ outline.widthheight[0][0] }}">
-                    </div>
-                    <div class="col">
-                        <input type="number" class="form-control" name="outline_{{ name }}_1" placeholder="Enter a number" value="{{ outline.widthheight[0][1] }}">
-                    </div>
-                </div>
-                {% endif %}
-                {% endfor %}
                 <div class="row mb-2" id="existing-rows"></div>
                 <div class="col">
                     <button type="button" style="width: 500px;" class="btn btn-secondary" id="add-row-btn2">Add</button>
@@ -109,25 +109,25 @@
                 <div class="col"></div>
                 <div class="col"></div>
                 <div class="col">
-                    <span>w</span>
+                    <span>W</span>
                 </div>
                 <div class="col">
-                    <span>Insulation</span>
+                    <span>Soldering Support</span>
                 </div>
                 <div class="col">
-                    <span>x</span>
+                    <span>X</span>
                 </div>
                 <div class="col">
-                    <span>y</span>
+                    <span>Y</span>
                 </div>
                 <div class="col">
-                    <span>z</span>
+                    <span>Z</span>
                 </div>
                 <div class="col">
-                    <span>width</span>
+                    <span>Width</span>
                 </div>
                 <div class="col">
-                    <span>height</span>
+                    <span>Height</span>
                 </div>
             </div>
             {% if sbars %}

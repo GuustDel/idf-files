@@ -114,7 +114,6 @@ def submit_file():
     for name, outline in corrected_component_outlines.items():
         if outline['component_type'] == 'string':
             widthheight_prev[name] = outline['widthheight']
-        
     print("widthheight_prev", widthheight_prev)
 
     if new_string_names is None:
@@ -180,10 +179,6 @@ def submit_parameters():
     if request.form.get('new_sbar_name_dyn', None) is not None:
         idf.add_components(request.form, corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, sbars)
 
-    if request.form.get('new_string_name_dyn', None) is not None:
-        z_sbar = {string: False for string in strings}
-        idf.add_components(request.form, corrected_component_outlines, corrected_component_placements, w_string, z_sbar = z_sbar, sbars = strings)
-
     for sbar, value in w_sbar.items():
         if sbar not in w_sbar_prev:
             w_sbar_prev[sbar] = []
@@ -200,10 +195,14 @@ def submit_parameters():
 
     for name, component in corrected_component_outlines.items():
         if component['component_type'] == 'string':
-            widthheight_prev[name].append(component['widthheight'])
+            widthheight = [float(request.form.get(f'outline_{name}_0', None)), float(request.form.get(f'outline_{name}_1', None))]
+            print("widthheight", widthheight)
+            widthheight_prev[name].append(widthheight)
+            print("widthheight_prev", widthheight_prev)
+            print("component", component['widthheight'])
             if len(widthheight_prev[name]) > 2:
                 widthheight_prev[name].pop(0)
-
+    print("widthheight_prev", widthheight_prev)
 
     idf.translate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_string_prev, request.form, widthheight_prev=widthheight_prev)
     idf.rotate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_sbar, w_string_prev, w_string)
@@ -242,6 +241,10 @@ def submit_parameters():
     session['w_string_prev'] = w_string_prev
     logging.info("Route: /submit_parameters - Session data stored")
 
+    # Clear input fields
+    for key in new_string_names.keys():
+        new_string_names[key] = ""
+
     return render_template('manipulate.html', manipulate_after_submit_parameters = True, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, w_sbar=w_sbar, w_string=w_string, z_sbar=z_sbar, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
 
 
@@ -263,8 +266,8 @@ def preview():
     # Data processing
     if board_outline is None or component_outlines is None or component_placements is None:
         return redirect('/')
-    fig = idf.draw_board(board_outline, component_outlines, component_placements)
-    graph_json = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    # fig = idf.draw_board(board_outline, component_outlines, component_placements)
+    # graph_json = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
     
     fig2 = idf.draw_board(board_outline, corrected_component_outlines, corrected_component_placements)
     graph_json2 = json.dumps(fig2, cls=plotly.utils.PlotlyJSONEncoder)

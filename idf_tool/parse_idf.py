@@ -198,6 +198,8 @@ def translate(corrected_component_placements, corrected_component_outlines, w_sb
                 if corrected_component_placements[id]['name'] == name:
                     if w_string_prev[id][-1] == w_string_prev[id][-2]:
                         if widthheight_prev[name][-1] != widthheight_prev[name][-2]:
+                            print("Widthheight changed")
+                            print(widthheight_prev[name][-1], widthheight_prev[name][-2])
                             outline['coordinates'] = [[0.0, 0.0, 0.0],
                                                     [float(form_data.get(f'outline_{name}_0', outline['coordinates'][1][0])), 0.0, 0.0],
                                                     [float(form_data.get(f'outline_{name}_0', outline['coordinates'][1][0])), float(form_data.get(f'outline_{name}_1', outline['coordinates'][2][1])), 0.0],
@@ -303,21 +305,34 @@ def regenerate_idf_file_content(file_path, corrected_component_outlines, correct
     for i in range(len(lines)):
         if i < 12:
             new_lines += f'{lines[i]}'
-        
+    
     new_lines += '.PLACEMENT' + '\n'
     for component_id, component_placement in corrected_component_placements.items():
-        new_lines += f'"{component_placement["name"]}" "{component_placement["component_type"]}" {component_id}\n'
-        new_lines += f'{component_placement["placement"][0]} {component_placement["placement"][1]} {component_placement["placement"][2]} {component_placement["placement"][3]} TOP PLACED\n'
+        if component_placement['component_type'] == 'string':
+            new_lines += f'"{component_placement["name"]}" "{component_placement["component_type"]}" {component_id}\n'
+            new_lines += f'{component_placement["placement"][0]} {component_placement["placement"][1]} {component_placement["placement"][2]} {component_placement["placement"][3]} TOP PLACED\n'
+    for component_id, component_placement in corrected_component_placements.items():
+        if component_placement['component_type'] == 'busbar':
+            new_lines += f'"{component_placement["name"]}" "{component_placement["component_type"]}" {component_id}\n'
+            new_lines += f'{component_placement["placement"][0]} {component_placement["placement"][1]} {component_placement["placement"][2]} {component_placement["placement"][3]} TOP PLACED\n'
     new_lines += '.END_PLACEMENT' + '\n'
     
     for component_id, corrected_component_outline in corrected_component_outlines.items():
-        new_lines += '.MECHANICAL' + '\n'
-        new_lines += f'"{component_id}" "{corrected_component_outline["component_type"]}" MM {corrected_component_outline["height"]}\n'
-        for coordinate in corrected_component_outline['coordinates']:
-            new_lines += f'0 {coordinate[0]} {coordinate[1]} {coordinate[2]}\n'
-        new_lines += '.END_MECHANICAL' + '\n'
-    
+        if corrected_component_outline['component_type'] == 'busbar':
+            new_lines += '.MECHANICAL' + '\n'
+            new_lines += f'"{component_id}" "{corrected_component_outline["component_type"]}" MM {corrected_component_outline["height"]}\n'
+            for coordinate in corrected_component_outline['coordinates']:
+                new_lines += f'0 {coordinate[0]} {coordinate[1]} {coordinate[2]}\n'
+            new_lines += '.END_MECHANICAL' + '\n'
+    for component_id, corrected_component_outline in corrected_component_outlines.items():
+        if corrected_component_outline["component_type"] == "string":
+            new_lines += '.MECHANICAL' + '\n'
+            new_lines += f'"{component_id}" "{corrected_component_outline["component_type"]}" MM {corrected_component_outline["height"]}\n'
+            for coordinate in corrected_component_outline['coordinates']:
+                new_lines += f'0 {coordinate[0]} {coordinate[1]} {coordinate[2]}\n'
+            new_lines += '.END_MECHANICAL' + '\n' 
     return new_lines
+
 
 import numpy as np
 
@@ -355,21 +370,26 @@ def add_component(corrected_component_outlines, corrected_component_placements, 
 
 def change_string_names(corrected_component_placements, corrected_component_outlines, new_string_names, strings):
     for string_name, new_string_name in new_string_names.items():
+        ids = []
         if new_string_name != '':
-            for _, corrected_component_placement in corrected_component_placements.items():
-                if corrected_component_placement['name'] == string_name:
-                    corrected_component_placement['name'] = new_string_name
-                    if string_name in corrected_component_outlines:
-                        corrected_component_outlines[new_string_name] = corrected_component_outlines.pop(string_name)
-                    if string_name in strings:
-                        strings[strings.index(string_name)] = new_string_name
-                    break
+            for id, placement in corrected_component_placements.items():
+                if placement['name'] == string_name:
+                    ids.append(id)
+            print(ids)
+            for id in ids:
+                corrected_component_placements[id]['name'] = new_string_name
+            if string_name in corrected_component_outlines:
+                corrected_component_outlines[new_string_name] = corrected_component_outlines.pop(string_name)
+            if string_name in strings:
+                strings[strings.index(string_name)] = new_string_name
     return
 
 def change_sbar_height(corrected_component_outlines, z_sbar):
     for sbar, height in z_sbar.items():
         if height:
-            corrected_component_outlines[sbar]['height'] = str(float(corrected_component_outlines[sbar]['height']) + 2.3)
+            corrected_component_outlines[sbar]['height'] = "2.3"
+        else:
+            corrected_component_outlines[sbar]['height'] = "0.3"
     return
 
 def export(filename, output_file_path, new_lines):

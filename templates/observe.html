@@ -64,18 +64,43 @@
         <div class="grid-container">
             <div class="col">
                 <h2>Uploaded IDF</h2>
-                <div class="grid-item file-content-container">
-                    <pre>{{ file_content }}</pre>
+                <div class="grid-item file-content-container" style="position: relative;">
+                    <button onclick="copyToClipboard()" style="position: absolute; top: 10px; right: 20px;" class="copy-button btn btn-outline-primary">
+                        <i class="bi bi-clipboard"></i>
+                    </button>
+                    <pre id="fileContent" style="overflow: auto; max-height: 650px;">{{ file_content }}</pre>
                 </div>
             </div>
             <div class="col">
                 <h2>Exported IDF</h2>
-                <div class="grid-item file-content-container">
-                    <pre>{{ new_file_content }}</pre>
+                <div class="grid-item file-content-container" style="position: relative;">
+                    <button onclick="copyToClipboard2()" style="position: absolute; top: 10px; right: 20px;" class="copy-button btn btn-outline-primary">
+                        <i class="bi bi-clipboard"></i>
+                    </button>
+                    <pre id="fileContent2" style="overflow: auto; max-height: 650px;">{{ new_file_content }}</pre>
                 </div>
             </div>
         </div>
     </div>
+
+<script>
+function copyToClipboard() {
+    var content = document.getElementById("fileContent").innerText;
+    navigator.clipboard.writeText(content).then(function() {
+        alert('Copied to clipboard');
+    }, function(err) {
+        console.error('Could not copy text: ', err);
+    });
+}
+function copyToClipboard2() {
+    var content = document.getElementById("fileContent2").innerText;
+    navigator.clipboard.writeText(content).then(function() {
+        alert('Copied to clipboard');
+    }, function(err) {
+        console.error('Could not copy text: ', err);
+    });
+}
+</script>
 
 {% endif %}
 {% endblock %}
