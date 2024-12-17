@@ -330,7 +330,7 @@ def regenerate_idf_file_content(file_path, corrected_component_outlines, correct
             new_lines += f'"{component_id}" "{corrected_component_outline["component_type"]}" MM {corrected_component_outline["height"]}\n'
             for coordinate in corrected_component_outline['coordinates']:
                 new_lines += f'0 {coordinate[0]} {coordinate[1]} {coordinate[2]}\n'
-            new_lines += '.END_MECHANICAL' + '\n' 
+            new_lines += '.END_MECHANICAL' + '\n'
     return new_lines
 
 

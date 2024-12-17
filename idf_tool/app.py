@@ -26,7 +26,7 @@ app.config.update(
 
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), "uploads")
-app.config['EXPORT_FOLDER'] = os.path.join(os.getcwd(), "Costar")
+app.config['EXPORT_FOLDER'] = os.path.join(os.getcwd(), "submits")
 app.config['MAX_CONTENT_LENGTH'] = 15 * 1024  # 15kB max file size
 app.config['ALLOWED_EXTENSIONS'] = {'idf'}
 
