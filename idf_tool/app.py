@@ -179,7 +179,7 @@ def submit_parameters():
     if request.form.get('new_sbar_name_dyn', None) is not None or request.form.get('new_string_name_dyn', None) is not None:
         idf.add_components(request.form, corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, w_string, sbars, strings)
 
-    print("w_string", w_string)
+    
     for sbar, value in w_sbar.items():
         if sbar not in w_sbar_prev:
             w_sbar_prev[sbar] = []
@@ -187,7 +187,7 @@ def submit_parameters():
         w_sbar_prev[sbar].append(value)
         if len(w_sbar_prev[sbar]) > 2:
             w_sbar_prev[sbar].pop(0)
-
+    print("w_string", w_string)
     for string, value in w_string.items():
         if string not in w_string_prev:
             w_string_prev[string] = []
@@ -195,6 +195,7 @@ def submit_parameters():
         w_string_prev[string].append(value)
         if len(w_string_prev[string]) > 2:
             w_string_prev[string].pop(0)
+    print("w_string_prev", w_string_prev)
 
     for name, component in corrected_component_outlines.items():
         if component['component_type'] == 'string':
@@ -363,6 +364,7 @@ def remove_string():
     filename = session.get('filename', None)
     corrected_component_placements = session.get('corrected_component_placements', None)
     corrected_component_outlines = session.get('corrected_component_outlines', None)
+    w_string_prev = session.get('w_string_prev', {})
     logging.info("Route: /remove_string - Session data retrieved")
 
     # HTML Parsing
@@ -379,6 +381,7 @@ def remove_string():
         strings = [string for string in strings if string != corrected_component_placements[string_to_delete]['name']]
     del corrected_component_placements[string_to_delete]
     del w_string[string_to_delete]
+    del w_string_prev[string_to_delete]
     logging.info("Route: /remove_string - Data processed")
 
     # Store session data
@@ -481,7 +484,7 @@ def generate_string_name():
     str_keys = [key for key in corrected_component_placements.keys() if re.match(r'STR\d{3}', key)]
     
     if not str_keys:
-        return 'STR001'
+        return jsonify(string_name='STR000')
     
     # Extract the numeric part and find the maximum
     max_num = max(int(key[3:]) for key in str_keys)

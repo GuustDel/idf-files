@@ -46,7 +46,6 @@
                 </div>
                 {% endif %}
                 {% endfor %}
-            {% if strings %}
                 <div class="row custom-col2">
                     <div class="col"></div>
                     <div class="col"></div>
@@ -63,6 +62,7 @@
                         <span>Z</span>
                     </div>
                 </div>
+            {% if strings %}
                 {% for id, placement in corrected_component_placements.items() %}
                 {% if placement.component_type == "string" %}
                 <div class="row mb-2">
@@ -97,11 +97,11 @@
                 </div>
                 {% endif %}
                 {% endfor %}
-                <div class="row mb-2" id="existing-rows"></div>
-                <div class="col">
-                    <button type="button" style="width: 500px;" class="btn btn-secondary" id="add-row-btn">Add</button>
-                </div>
             {% endif %}
+            <div class="row mb-2" id="existing-rows"></div>
+            <div class="col">
+                <button type="button" style="width: 500px;" class="btn btn-secondary" id="add-row-btn">Add</button>
+            </div>
             <div class="row mb-2" id="existing-rows"></div>
         </fieldset>
         <fieldset class="row custom-col border border-2 rounded-0" style="border-color: #ccc">

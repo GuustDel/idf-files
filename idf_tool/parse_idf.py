@@ -397,17 +397,14 @@ def add_string(corrected_component_outlines, corrected_component_placements, w_s
     str_keys = [key for key in corrected_component_placements.keys() if re.match(r'STR\d{3}', key)]
     
     if not str_keys:
-        next_str_key = 'STR001'
-    
-    # Extract the numeric part and find the maximum
-    max_num = max(int(key[3:]) for key in str_keys)
-    
-    # Increment the number and format it back to STR###
-    next_num = max_num + 1
-    next_str_key = f'STR{next_num:03}'
+        next_str_key = 'STR000'
+    else:
+        max_num = max(int(key[3:]) for key in str_keys)
+        next_num = max_num + 1
+        next_str_key = f'STR{next_num:03}'
 
-    corrected_component_outlines["String"] = {'component_type': 'string', 'height': 1.0, 'coordinates': outline, 'widthheight': [[float(new_outline_height), float(new_outline_width)]]}
-    corrected_component_placements[next_str_key] = {'name': "String", 'component_type': 'string', 'placement': placement}
+    corrected_component_outlines["temp"] = {'component_type': 'string', 'height': 1.0, 'coordinates': outline, 'widthheight': [[float(new_outline_height), float(new_outline_width)]]}
+    corrected_component_placements[next_str_key] = {'name': "temp", 'component_type': 'string', 'placement': placement}
     w_string[next_str_key] = new_string180deg
 
 def change_string_names(corrected_component_placements, corrected_component_outlines, new_string_names, strings):
