@@ -2,6 +2,7 @@ import numpy as np
 import os
 import plotly.graph_objects as go
 from collections import Counter
+import re
 
 def most_common_value(lst):
     if not lst:
@@ -181,7 +182,7 @@ def translate(corrected_component_placements, corrected_component_outlines, w_sb
                 placement['placement'][1] = float(form_data.get(f'placement_{id}_1', placement['placement'][1]))
                 placement['placement'][2] = float(form_data.get(f'placement_{id}_2', placement['placement'][2]))
         elif placement['component_type'] == 'string':
-            if w_string_prev[id][-1] == w_string_prev[id][-2]:
+            if w_string_prev[id][-1] == w_string_prev[id][-2] or len(w_string_prev[id]) == 1:
                 placement['placement'][0] = float(form_data.get(f'placement_{id}_0', placement['placement'][0]))
                 placement['placement'][1] = float(form_data.get(f'placement_{id}_1', placement['placement'][1]))
                 placement['placement'][2] = float(form_data.get(f'placement_{id}_2', placement['placement'][2]))
@@ -196,7 +197,9 @@ def translate(corrected_component_placements, corrected_component_outlines, w_sb
         elif outline['component_type'] == 'string':
             for id, _ in w_string_prev.items():
                 if corrected_component_placements[id]['name'] == name:
-                    if w_string_prev[id][-1] == w_string_prev[id][-2]:
+                    if w_string_prev[id][-1] == w_string_prev[id][-2] or len(w_string_prev[name]) == 1:
+                        if len(widthheight_prev[name]) == 1:
+                            break
                         if widthheight_prev[name][-1] != widthheight_prev[name][-2]:
                             print("Widthheight changed")
                             print(widthheight_prev[name][-1], widthheight_prev[name][-2])
@@ -336,37 +339,76 @@ def regenerate_idf_file_content(file_path, corrected_component_outlines, correct
 
 import numpy as np
 
-def add_components(form_data, corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, sbars):
+def add_components(form_data, corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, w_string, sbars, strings):
     # Initialize sbar_checkboxes
-    for sbar in form_data.getlist('sbars'):
-        w_sbar[sbar] = float(form_data.get(f'sbar180deg_{sbar}'))
-        z_sbar[sbar] = bool(form_data.get(f'sbarheight_{sbar}'))
+    if form_data.get('new_sbar_name_dyn') is not None:
+        for sbar in form_data.getlist('sbars'):
+            w_sbar[sbar] = float(form_data.get(f'sbar180deg_{sbar}'))
+            z_sbar[sbar] = bool(form_data.get(f'sbarheight_{sbar}'))
 
-    # Data processing
-    new_sbar_data = ()
-    new_sbar_name = form_data.get('new_sbar_name_dyn')
-    new_placement_x = form_data.get('new_placement_x_dyn')
-    new_placement_y = form_data.get('new_placement_y_dyn')
-    new_placement_z = form_data.get('new_placement_z_dyn')
-    new_outline_height = form_data.get('new_outline_length_dyn')
-    new_outline_width = form_data.get('new_outline_width_dyn')
-    new_sbar_data = (new_sbar_name, 0.0, False, float(new_placement_x), float(new_placement_y), float(new_placement_z), float(new_outline_height), float(new_outline_width))
+        # Data processing
+        new_sbar_data = ()
+        new_sbar_name = form_data.get('new_sbar_name_dyn')
+        new_placement_x = form_data.get('new_placement_x_dyn')
+        new_placement_y = form_data.get('new_placement_y_dyn')
+        new_placement_z = form_data.get('new_placement_z_dyn')
+        new_outline_height = form_data.get('new_outline_length_dyn')
+        new_outline_width = form_data.get('new_outline_width_dyn')
+        new_sbar_data = (new_sbar_name, 0.0, False, float(new_placement_x), float(new_placement_y), float(new_placement_z), float(new_outline_height), float(new_outline_width))
+        sbars.append(new_sbar_name)
+        add_busbar(corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, new_sbar_data)
 
-    sbars.append(new_sbar_name)
-    add_component(corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, new_sbar_data)
-
+    if form_data.get('new_string_name_dyn') is not None:
+        new_string_name = form_data.get('new_string_name_dyn')
+        new_placement_x = form_data.get('new_placement_x_dyn')
+        new_placement_y = form_data.get('new_placement_y_dyn')
+        new_placement_z = form_data.get('new_placement_z_dyn')
+        strings.append(new_string_name)
+        new_string_data = (0.0, float(new_placement_x), float(new_placement_y), float(new_placement_z), 182.00, 1000.00)
+        add_string(corrected_component_outlines, corrected_component_placements, w_string, new_string_data)
     return
 
-def add_component(corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, new_sbar_data):
+def add_busbar(corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, new_sbar_data):
     new_sbar_name, new_sbar180deg, new_sbarheight, new_placement_x, new_placement_y, new_placement_z, new_outline_height, new_outline_width = new_sbar_data
     outline = [[0.0, 0.0, 0.0], [float(new_outline_height), 0.0, 0.0], [float(new_outline_height), float(new_outline_width), 0.0], [0.0, float(new_outline_width), 0.0], [0.0, 0.0, 0.0]]
     placement = [float(new_placement_x), float(new_placement_y), float(new_placement_z), 0.0]
 
-    id = len([placement for placement in corrected_component_placements.values() if placement['component_type'] == 'busbar'])
+    bb_keys = [key for key in corrected_component_placements.keys() if key.startswith('BB')]
+
+    if bb_keys:
+        max_index = max(int(key[2:]) for key in bb_keys)
+    else:
+        max_index = 0
+    
+    new_index = max_index + 1
+    new_id = f'BB{new_index:03}'
+
     corrected_component_outlines[new_sbar_name] = {'component_type': 'busbar', 'height': new_sbarheight, 'coordinates': outline}
-    corrected_component_placements[f"BB{id:03}"] = {'name': new_sbar_name, 'component_type': 'busbar', 'placement': placement}
+    corrected_component_placements[new_id] = {'name': new_sbar_name, 'component_type': 'busbar', 'placement': placement}
     w_sbar[new_sbar_name] = new_sbar180deg
     z_sbar[new_sbar_name] = new_sbarheight
+
+def add_string(corrected_component_outlines, corrected_component_placements, w_string, new_string_data):
+    print("Adding string")
+    new_string180deg, new_placement_x, new_placement_y, new_placement_z, new_outline_height, new_outline_width = new_string_data
+    outline = [[0.0, 0.0, 0.0], [float(new_outline_height), 0.0, 0.0], [float(new_outline_height), float(new_outline_width), 0.0], [0.0, float(new_outline_width), 0.0], [0.0, 0.0, 0.0]]
+    placement = [float(new_placement_x), float(new_placement_y), float(new_placement_z), 0.0]
+
+    str_keys = [key for key in corrected_component_placements.keys() if re.match(r'STR\d{3}', key)]
+    
+    if not str_keys:
+        next_str_key = 'STR001'
+    
+    # Extract the numeric part and find the maximum
+    max_num = max(int(key[3:]) for key in str_keys)
+    
+    # Increment the number and format it back to STR###
+    next_num = max_num + 1
+    next_str_key = f'STR{next_num:03}'
+
+    corrected_component_outlines["String"] = {'component_type': 'string', 'height': 1.0, 'coordinates': outline, 'widthheight': [[float(new_outline_height), float(new_outline_width)]]}
+    corrected_component_placements[next_str_key] = {'name': "String", 'component_type': 'string', 'placement': placement}
+    w_string[next_str_key] = new_string180deg
 
 def change_string_names(corrected_component_placements, corrected_component_outlines, new_string_names, strings):
     for string_name, new_string_name in new_string_names.items():

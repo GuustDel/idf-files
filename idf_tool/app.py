@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+import re
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -114,7 +115,6 @@ def submit_file():
     for name, outline in corrected_component_outlines.items():
         if outline['component_type'] == 'string':
             widthheight_prev[name] = outline['widthheight']
-    print("widthheight_prev", widthheight_prev)
 
     if new_string_names is None:
         new_string_names = {string: '' for string in strings}
@@ -176,12 +176,14 @@ def submit_parameters():
     logging.info("Route: /submit_parameters - HTML parsed")
 
     # Data processing
-    if request.form.get('new_sbar_name_dyn', None) is not None:
-        idf.add_components(request.form, corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, sbars)
+    if request.form.get('new_sbar_name_dyn', None) is not None or request.form.get('new_string_name_dyn', None) is not None:
+        idf.add_components(request.form, corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, w_string, sbars, strings)
 
+    print("w_string", w_string)
     for sbar, value in w_sbar.items():
         if sbar not in w_sbar_prev:
             w_sbar_prev[sbar] = []
+            w_sbar_prev[sbar].append(value)
         w_sbar_prev[sbar].append(value)
         if len(w_sbar_prev[sbar]) > 2:
             w_sbar_prev[sbar].pop(0)
@@ -189,20 +191,24 @@ def submit_parameters():
     for string, value in w_string.items():
         if string not in w_string_prev:
             w_string_prev[string] = []
+            w_string_prev[string].append(value)
         w_string_prev[string].append(value)
         if len(w_string_prev[string]) > 2:
             w_string_prev[string].pop(0)
 
     for name, component in corrected_component_outlines.items():
         if component['component_type'] == 'string':
-            widthheight = [float(request.form.get(f'outline_{name}_0', None)), float(request.form.get(f'outline_{name}_1', None))]
-            print("widthheight", widthheight)
-            widthheight_prev[name].append(widthheight)
-            print("widthheight_prev", widthheight_prev)
-            print("component", component['widthheight'])
+            if request.form.get(f'outline_{name}_0', None) is None or request.form.get(f'outline_{name}_1', None) is None:
+                widthheight = [1000.00, 182.00]
+            else:
+                widthheight = [float(request.form.get(f'outline_{name}_0', None)), float(request.form.get(f'outline_{name}_1', None))]
+            if name not in widthheight_prev:
+                widthheight_prev[name] = []
+                widthheight_prev[name].append(widthheight)
+            else:
+                widthheight_prev[name].append(widthheight)
             if len(widthheight_prev[name]) > 2:
                 widthheight_prev[name].pop(0)
-    print("widthheight_prev", widthheight_prev)
 
     idf.translate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_string_prev, request.form, widthheight_prev=widthheight_prev)
     idf.rotate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_sbar, w_string_prev, w_string)
@@ -317,7 +323,6 @@ def remove_busbar():
 
     # HTML Parsing
     sbar_to_delete = request.form['sbar']
-    string_to_delete = request.form['string']
     logging.info(f"Route: /remove_busbar - {sbar_to_delete} to be deleted")
 
     # Data processing
@@ -328,13 +333,6 @@ def remove_busbar():
     del z_sbar[sbar_to_delete]
     del w_sbar[sbar_to_delete]
     sbars = [sbar for sbar in sbars if sbar != sbar_to_delete]
-
-    del corrected_component_outlines[string_to_delete]
-    keys_to_delete = [id for id, placement in corrected_component_placements.items() if placement["name"] == string_to_delete]
-    for key in keys_to_delete:
-        del corrected_component_placements[key]
-    del w_string[string_to_delete]
-    strings = [string for string in strings if string != string_to_delete]
     logging.info("Route: /remove_busbar - Data processed")
 
     # Store session data
@@ -346,6 +344,49 @@ def remove_busbar():
     session['strings'] = strings
     session['w_string'] = w_string
     logging.info("Route: /remove_busbar - Session data stored")
+
+    return render_template('manipulate.html', manipulate_after_submit_parameters = True, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, w_sbar=w_sbar, w_string=w_string, z_sbar=z_sbar, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
+
+@app.route('/remove_string', methods=['POST'])
+def remove_string():
+    print("remove_string")
+    fig_dir = url_for('static', filename='img/Soltech_Logo.png')
+
+    # Session retrieval
+    new_string_names = session.get('new_string_names', {})
+    sbars = session.get('sbars', [])
+    strings = session.get('strings', [])
+    graph_json = session.get('graph_json', None)
+    w_sbar = session.get('w_sbar', {})
+    w_string = session.get('w_string', {})
+    z_sbar = session.get('z_sbar', {})
+    filename = session.get('filename', None)
+    corrected_component_placements = session.get('corrected_component_placements', None)
+    corrected_component_outlines = session.get('corrected_component_outlines', None)
+    logging.info("Route: /remove_string - Session data retrieved")
+
+    # HTML Parsing
+    string_to_delete = request.form['string']
+    logging.info(f"Route: /remove_string - {string_to_delete} to be deleted")
+
+    # Data processing
+    count = 0
+    for id, placement in corrected_component_placements.items():
+        if placement['name'] == corrected_component_placements[string_to_delete]['name']:
+            count += 1
+    if count ==1:
+        del corrected_component_outlines[corrected_component_placements[string_to_delete]['name']]
+        strings = [string for string in strings if string != corrected_component_placements[string_to_delete]['name']]
+    del corrected_component_placements[string_to_delete]
+    del w_string[string_to_delete]
+    logging.info("Route: /remove_string - Data processed")
+
+    # Store session data
+    session['corrected_component_placements'] = corrected_component_placements
+    session['corrected_component_outlines'] = corrected_component_outlines
+    session['strings'] = strings
+    session['w_string'] = w_string
+    logging.info("Route: /remove_string - Session data stored")
 
     return render_template('manipulate.html', manipulate_after_submit_parameters = True, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, w_sbar=w_sbar, w_string=w_string, z_sbar=z_sbar, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
 
@@ -407,6 +448,19 @@ def request_entity_too_large(error):
 @app.route('/generate_busbar_name', methods=['GET'])
 def generate_busbar_name():    
     print("generate_busbar_name")
+    corrected_component_placements = session.get('corrected_component_placements', {})
+
+    bb_keys = [key for key in corrected_component_placements.keys() if key.startswith('BB')]
+
+    if bb_keys:
+        max_index = max(int(key[2:]) for key in bb_keys)
+    else:
+        max_index = 0
+    
+    # Generate new busbar name and ID
+    new_index = max_index + 1
+    new_id = f'BB{new_index:03}'
+
     sbars = session.get('sbars', [])
     if sbars:
         base_name = sbars[-1].split('_')[0]
@@ -416,8 +470,27 @@ def generate_busbar_name():
     while True:
         new_sbar_name = f'{base_name}_{index:03}'
         if new_sbar_name not in sbars:
-            return jsonify(busbar_name=new_sbar_name)
+            return jsonify(busbar_name=new_sbar_name, id=new_id)
         index += 1
+
+@app.route('/generate_string_name', methods=['GET'])
+def generate_string_name():
+    print("generate_string_name")
+    corrected_component_placements = session.get('corrected_component_placements', {})
+    
+    str_keys = [key for key in corrected_component_placements.keys() if re.match(r'STR\d{3}', key)]
+    
+    if not str_keys:
+        return 'STR001'
+    
+    # Extract the numeric part and find the maximum
+    max_num = max(int(key[3:]) for key in str_keys)
+    
+    # Increment the number and format it back to STR###
+    next_num = max_num + 1
+    next_str_key = f'STR{next_num:03}'
+    
+    return jsonify(string_name=next_str_key)
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True, threaded=True)
