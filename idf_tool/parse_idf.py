@@ -197,7 +197,7 @@ def translate(corrected_component_placements, corrected_component_outlines, w_sb
         elif outline['component_type'] == 'string':
             for id, _ in w_string_prev.items():
                 if corrected_component_placements[id]['name'] == name:
-                    if w_string_prev[id][-1] == w_string_prev[id][-2] or len(w_string_prev[name]) == 1:
+                    if w_string_prev[id][-1] == w_string_prev[id][-2] or len(w_string_prev[id]) == 1:
                         if len(widthheight_prev[name]) == 1:
                             break
                         if widthheight_prev[name][-1] != widthheight_prev[name][-2]:

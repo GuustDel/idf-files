@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 import re
+import webbrowser
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -28,7 +29,7 @@ app.config.update(
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), "uploads")
 app.config['EXPORT_FOLDER'] = os.path.join(os.getcwd(), "submits")
-app.config['MAX_CONTENT_LENGTH'] = 15 * 1024  # 15kB max file size
+app.config['MAX_CONTENT_LENGTH'] = 15 * 1024 * 1024  # 15MB max file size
 app.config['ALLOWED_EXTENSIONS'] = {'idf'}
 
 Session(app)
@@ -162,9 +163,10 @@ def submit_parameters():
     w_sbar = session.get('w_sbar', {sbar: 0.0 for sbar in sbars})
     widthheight_prev = session.get('widthheight_prev', {string: [0, 0] for string in strings})
     logging.info("Route: /submit_parameters - Session data retrieved")
-    
+    print(request.form)
     # HTML Parsing
     new_string_names = {key[7:]: request.form[key] for key in request.form if key.startswith('string_')}
+    print("component added")
 
     for id, placement in corrected_component_placements.items():
         if placement["component_type"] == "string":
@@ -178,7 +180,6 @@ def submit_parameters():
     # Data processing
     if request.form.get('new_sbar_name_dyn', None) is not None or request.form.get('new_string_name_dyn', None) is not None:
         idf.add_components(request.form, corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, w_string, sbars, strings)
-
     
     for sbar, value in w_sbar.items():
         if sbar not in w_sbar_prev:
