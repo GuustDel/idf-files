@@ -163,10 +163,9 @@ def submit_parameters():
     w_sbar = session.get('w_sbar', {sbar: 0.0 for sbar in sbars})
     widthheight_prev = session.get('widthheight_prev', {string: [0, 0] for string in strings})
     logging.info("Route: /submit_parameters - Session data retrieved")
-    print(request.form)
+
     # HTML Parsing
     new_string_names = {key[7:]: request.form[key] for key in request.form if key.startswith('string_')}
-    print("component added")
 
     for id, placement in corrected_component_placements.items():
         if placement["component_type"] == "string":
@@ -285,7 +284,7 @@ def preview():
     session['graph_json2'] = graph_json2
     logging.info("Route: /observe_src - Session data stored")
     
-    return render_template('observe.html', section='preview', file_content=file_content, graph_json=graph_json, graph_json2=graph_json2, new_file_content=new_file_content, fig_dir=fig_dir)
+    return render_template('observe.html', section='visualize', file_content=file_content, graph_json=graph_json, graph_json2=graph_json2, new_file_content=new_file_content, fig_dir=fig_dir)
 
 @app.route('/manipulate_src')
 def manipulate():

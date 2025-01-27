@@ -7,10 +7,10 @@
 
 <ul class="nav nav-underline justify-content-center">
     <li class="nav-item">
-        <a class="nav-link {% if section == 'preview' %}active{% endif %}" aria-current="page" href="{{ url_for('preview_src') }}">Preview</a>
+        <a class="nav-link {% if section == 'visualize' %}active{% endif %}" href="{{ url_for('visualize_src') }}">Visualize</a>
     </li>
     <li class="nav-item">
-        <a class="nav-link {% if section == 'visualize' %}active{% endif %}" href="{{ url_for('visualize_src') }}">Visualize</a>
+        <a class="nav-link {% if section == 'preview' %}active{% endif %}" aria-current="page" href="{{ url_for('preview_src') }}">Preview</a>
     </li>
 </ul>
 

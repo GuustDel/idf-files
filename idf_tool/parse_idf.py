@@ -178,6 +178,7 @@ def translate(corrected_component_placements, corrected_component_outlines, w_sb
     for id, placement in corrected_component_placements.items():
         if placement['component_type'] == 'busbar':
             if w_sbar_prev[placement["name"]][-1] == w_sbar_prev[placement["name"]][-2]:
+                print(placement['name'], float(form_data.get(f'placement_{id}_0', placement['placement'][0])), float(form_data.get(f'placement_{id}_1', placement['placement'][1])), float(form_data.get(f'placement_{id}_2', placement['placement'][2])))
                 placement['placement'][0] = float(form_data.get(f'placement_{id}_0', placement['placement'][0]))
                 placement['placement'][1] = float(form_data.get(f'placement_{id}_1', placement['placement'][1]))
                 placement['placement'][2] = float(form_data.get(f'placement_{id}_2', placement['placement'][2]))
