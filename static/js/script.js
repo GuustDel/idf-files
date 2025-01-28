@@ -144,8 +144,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 </button>
             </div>
                 <div class="col">
-                    <label name="new_string_name_dyn" value="${id}">${id}:</label>
+                    <label name="new_string_name_dyn" style="width: 220px;" value="${id}">${id}:</label>
                 </div>
+            <div class="col">
+                <select class="form-control" style="width: 100px;" id="name_{{ id }}" name="string_${id}">
+                    {% for name, outline in corrected_component_outlines.items() %} 
+                    {% if outline.component_type == "string" %}
+                    <option value="{{ name }}" {% if name == placement.name %}selected{% endif %}></option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
             <div class="col">
                 <select id="new_string180deg_${id}" name="new_string180deg_${id}">
                     <option value="0" {% if w_string[${id}] == 0 %}selected{% endif %}>0</option>
@@ -155,13 +164,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 </select>
             </div>
             <div class="col">
-                <input type="number" class="form-control" name="new_placement_x_dyn" placeholder="Enter x" value="0.0" step="any">
+                <input type="number" class="form-control" style="width: 150px;" name="new_placement_x_dyn" placeholder="Enter x" value="0.0" step="any">
             </div>
             <div class="col">
-                <input type="number" class="form-control" name="new_placement_y_dyn" placeholder="Enter y" value="0.0" step="any">
+                <input type="number" class="form-control" style="width: 150px;" name="new_placement_y_dyn" placeholder="Enter y" value="0.0" step="any">
             </div>
             <div class="col">
-                <input type="number" class="form-control" name="new_placement_z_dyn" placeholder="Enter z" value="0.92" step="any">
+                <input type="number" class="form-control" style="width: 150px;" name="new_placement_z_dyn" placeholder="Enter z" value="0.92" step="any">
             </div>
         `;
         document.getElementById('existing-rows').appendChild(newRow);
@@ -169,6 +178,72 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add event listener to the new input fields
         addEnterKeyPrevention();
         addFloatConversion();
+    }
+
+    function addNewRow3(name) {
+        console.log("adding string", name);
+        const newRow = document.createElement('div');
+        newRow.className = 'row mb-2';
+        newRow.innerHTML = `
+            <div class="col">
+                        <label for="string_${name} style="width: 200px;">${name}:</label>
+                    </div>
+                    <div class="col">
+                        <input type="text" class="form-control" style="width: 150px;" id="string_${name}" name="string_${name}" value="">
+                    </div>
+                    <div class="col">
+                        <select class="form-control" style="width: 150px;"id="cell_type_${name}" name="cell_type_{{ name }}">
+                            <option value="M10">M10</option>
+                            <option value="M10 HC">M10 HC</option>
+                            <option value="G1">G1</option>
+                        </select>
+                    </div>
+                    <div class="col">
+                        <input type="number" class="form-control" style="width: 150px;" id="nr_cells_${name}" name="nr_of_cells_${name}" value="">
+                    </div>
+                    <div class="col">
+                        <input type="number" class="form-control" style="width: 150px;" id="dist_${name}" name="dist_${name}" value="">
+                    </div>
+                    <div class="col">
+                        <input type="number" class="form-control" style="width: 150px;" id="plus_${name}" name="plus_${name}" value="">
+                    </div>
+                    <div class="col">
+                        <input type="number" class="form-control" style="width: 150px;" id="minus_${name}" name="minus_${name}" value="">
+                    </div>
+        `;
+        document.getElementById('existing-rows3').appendChild(newRow);
+    
+        // Add event listener to the new input fields
+        addEnterKeyPrevention();
+        addFloatConversion();
+    }
+
+    function executeSubmitParameters3(name) {
+        console.log('Submitting parameters');
+
+        const form = document.querySelector('form');
+        const formData = new FormData(form);
+        formData.append('new_string_name', name)
+        formData.append('cell_type', "M10 HC")
+        formData.append('dist', 2);
+        formData.append('nr_cells', 5);
+        formData.append('plus', 10);
+        formData.append('minus', 10);
+        console.log(formData);
+        fetch('/submit_parameters', {
+            method: 'POST',
+            body: formData
+        }).then(response => {
+            if (response.ok) {
+                console.log('Parameters submitted successfully');
+                location.reload();
+            } else {
+                // Handle errors
+                console.error('Failed to submit parameters');
+            }
+        }).catch(error => {
+            console.error('Error:', error);
+        });
     }
 
     function executeSubmitParameters2(busbarName, id) {
@@ -240,15 +315,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('add-row-btn').addEventListener('click', function() {
         console.log('Adding new string');
-        fetch('/generate_string_name')
+        fetch('/generate_string_id')
             .then(response => response.json())
             .then(data => {
-                const id = data.string_name;
+                const id = data.string_id;
                 console.log('Generating string name:', id);
                 console.log('Adding new row');
                 addNewRow(id);
                 console.log('Executing submit parameters');
                 executeSubmitParameters(id);
+            })
+            .catch(error => console.error('Error:', error));
+    });
+
+    document.getElementById('add-row-btn3').addEventListener('click', function() {
+        console.log('Adding new string');
+        fetch('/generate_string_name')
+            .then(response => response.json())
+            .then(data => {
+                const name = data.string_name;
+                console.log('Generating string name:', name);
+                console.log('Adding new row');
+                addNewRow3(name);
+                executeSubmitParameters3(name);
             })
             .catch(error => console.error('Error:', error));
     });

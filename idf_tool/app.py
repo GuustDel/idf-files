@@ -6,7 +6,7 @@ import webbrowser
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from flask import Flask, render_template, request, redirect, flash, session, send_file, url_for, jsonify
+from flask import Flask, render_template, request, redirect, flash, session, send_file, url_for, jsonify, send_from_directory
 from flask_session import Session
 import idf_tool.parse_idf as idf
 import json
@@ -79,6 +79,8 @@ def submit_file():
     component_outlines = idf.component_outlines(file_path)
     component_placements = idf.component_placements(file_path)
     sbars, strings = idf.get_component_names_by_type(component_outlines)
+    cell_types = {'M10': [182.0, 182.0, 10, 13.1], 'M10 HC': [182.0, 91.0, 10, 13.1], 'G1': [158.75, 158.75, 5, 16.625]}
+
     logging.info("Route: /submit - IDF file parsed")
 
     # Data processing
@@ -124,7 +126,16 @@ def submit_file():
     file_content = file.read().decode('utf-8')
     logging.info("Route: /submit - Data processed")
 
+    string_metadata = {}
+    for string in strings:
+        outline = corrected_component_outlines[string]
+        dist, cell_type, nr_cells, plus, minus = idf.reverse_engineer_string_outline(outline['coordinates'], cell_types)
+        print(f"String: {string}, dist: {dist}, cell_type: {cell_type}, nr_cells: {nr_cells}, plus: {plus}, minus: {minus}")
+        string_metadata[string] = {'dist': dist, 'cell_type': cell_type, 'nr_cells': nr_cells, 'plus': plus, 'minus': minus}
+
     # Store session data
+    session['string_metadata'] = string_metadata
+    session['cell_types'] = cell_types
     session['file_content'] = file_content
     session['widthheight_prev'] = widthheight_prev
     session['graph_json'] = graph_json
@@ -162,6 +173,7 @@ def submit_parameters():
     z_sbar = session.get('z_sbar', {sbar: False for sbar in sbars})
     w_sbar = session.get('w_sbar', {sbar: 0.0 for sbar in sbars})
     widthheight_prev = session.get('widthheight_prev', {string: [0, 0] for string in strings})
+    cell_types = session.get('cell_types', {})
     logging.info("Route: /submit_parameters - Session data retrieved")
 
     # HTML Parsing
@@ -180,6 +192,15 @@ def submit_parameters():
     if request.form.get('new_sbar_name_dyn', None) is not None or request.form.get('new_string_name_dyn', None) is not None:
         idf.add_components(request.form, corrected_component_outlines, corrected_component_placements, w_sbar, z_sbar, w_string, sbars, strings)
     
+    if request.form.get('cell_type', None) is not None:
+        cell_name = request.form.get('new_string_name', "String M10 HC 5 Cells 2mm +10mm -10mm")
+        cell_type = request.form.get('cell_type', "M10 HC")
+        nr_cells = int(request.form.get('nr_cells', 5))
+        dist = float(request.form.get('dist', 2.0))
+        plus = float(request.form.get('plus', 10.0))
+        minus = float(request.form.get('minus', 10.0))
+        idf.generate_string_outline(cell_type, nr_cells, dist, plus, minus, corrected_component_outlines, cell_name, cell_types)
+
     for sbar, value in w_sbar.items():
         if sbar not in w_sbar_prev:
             w_sbar_prev[sbar] = []
@@ -187,7 +208,6 @@ def submit_parameters():
         w_sbar_prev[sbar].append(value)
         if len(w_sbar_prev[sbar]) > 2:
             w_sbar_prev[sbar].pop(0)
-    print("w_string", w_string)
     for string, value in w_string.items():
         if string not in w_string_prev:
             w_string_prev[string] = []
@@ -195,7 +215,6 @@ def submit_parameters():
         w_string_prev[string].append(value)
         if len(w_string_prev[string]) > 2:
             w_string_prev[string].pop(0)
-    print("w_string_prev", w_string_prev)
 
     for name, component in corrected_component_outlines.items():
         if component['component_type'] == 'string':
@@ -211,11 +230,37 @@ def submit_parameters():
             if len(widthheight_prev[name]) > 2:
                 widthheight_prev[name].pop(0)
 
+    
+    for id, placement in corrected_component_placements.items():
+        placement['name'] == request.form.get(f'name_{id}', placement['name'])
+
     idf.translate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_string_prev, request.form, widthheight_prev=widthheight_prev)
     idf.rotate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_sbar, w_string_prev, w_string)
 
     idf.change_string_names(corrected_component_placements, corrected_component_outlines, new_string_names, strings)
     idf.change_sbar_height(corrected_component_outlines, z_sbar)
+
+    
+    for string in strings:
+        print(string)
+        if request.form.get(f'nr_of_cells_{string}') != "" and request.form.get(f'dist_{string}') != "" and request.form.get(f'plus_{string}') != "" and request.form.get(f'minus_{string}') != "":
+            cell_type = request.form.get(f'cell_type_{string}', "M10 HC")
+            nr_cells = int(float(request.form.get(f'nr_of_cells_{string}', 5)))
+            dist = float(request.form.get(f'dist_{string}', 2.0))
+            plus = float(request.form.get(f'plus_{string}', 10.0))
+            minus = float(request.form.get(f'minus_{string}', 10.0))
+            if request.form.get(f'string_{string}', None) is None or request.form.get(f'string_{string}', None) == "":
+                cell_name = f"String {cell_type} {nr_cells} Cells {int(dist)}mm +{int(plus)}mm -{int(minus)}mm"
+            else:
+                cell_name = request.form.get(f'string_{string}')
+            idf.generate_string_outline(cell_type, nr_cells, dist, plus, minus, corrected_component_outlines, cell_name, cell_types)
+            for id, placement in corrected_component_placements.items():
+                if placement["name"] == string:
+                    placement['name'] = cell_name
+                    break
+            corrected_component_outlines[cell_name] = corrected_component_outlines.pop(string)
+            strings = [name for name, _ in corrected_component_outlines.items() if name.startswith('String')]
+
     
     for sbar in sbars:
         id = [id for id, placement in corrected_component_placements.items() if placement["name"] == sbar][0]
@@ -235,7 +280,14 @@ def submit_parameters():
     new_file_content = idf.regenerate_idf_file_content(file_path, corrected_component_outlines, corrected_component_placements)
     logging.info("Route: /submit_parameters - Data processed")
 
+    string_metadata = {}
+    for string in strings:
+        outline = corrected_component_outlines[string]
+        dist, cell_type, nr_cells, plus, minus = idf.reverse_engineer_string_outline(outline['coordinates'], cell_types)
+        string_metadata[string] = {'dist': dist, 'cell_type': cell_type, 'nr_cells': nr_cells, 'plus': plus, 'minus': minus}
+
     # Store session data
+    session['string_metadata'] = string_metadata
     session['new_file_content'] = new_file_content
     session['new_string_names'] = new_string_names
     session['corrected_component_placements'] = corrected_component_placements
@@ -246,13 +298,14 @@ def submit_parameters():
     session['z_sbar'] = z_sbar
     session['w_sbar_prev'] = w_sbar_prev
     session['w_string_prev'] = w_string_prev
+    session['strings'] = strings
     logging.info("Route: /submit_parameters - Session data stored")
 
     # Clear input fields
     for key in new_string_names.keys():
         new_string_names[key] = ""
 
-    return render_template('manipulate.html', manipulate_after_submit_parameters = True, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, w_sbar=w_sbar, w_string=w_string, z_sbar=z_sbar, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
+    return render_template('manipulate.html', string_metadata=string_metadata , manipulate_after_submit_parameters = True, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, w_sbar=w_sbar, w_string=w_string, z_sbar=z_sbar, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
 
 
 @app.route('/observe_src')
@@ -291,6 +344,7 @@ def manipulate():
     fig_dir = url_for('static', filename='img/Soltech_Logo.png')
 
     # Session retrieval
+    string_metadata = session.get('string_metadata', {})
     strings = session.get('strings', [])
     sbars = session.get('sbars', [])
     filename = session.get('filename', None)
@@ -302,7 +356,7 @@ def manipulate():
     corrected_component_outlines = session.get('corrected_component_outlines', None)
     logging.info("Route: /manipulate_src - Session data retrieved")
 
-    return render_template('manipulate.html', manipulate_after_submit_parameters = True, strings=strings, sbars=sbars, filename=filename, w_sbar=w_sbar, w_string=w_string, new_string_names=new_string_names, z_sbar=z_sbar, corrected_component_placements= corrected_component_placements, fig_dir=fig_dir, corrected_component_outlines=corrected_component_outlines)
+    return render_template('manipulate.html', string_metadata=string_metadata, manipulate_after_submit_parameters = True, strings=strings, sbars=sbars, filename=filename, w_sbar=w_sbar, w_string=w_string, new_string_names=new_string_names, z_sbar=z_sbar, corrected_component_placements= corrected_component_placements, fig_dir=fig_dir, corrected_component_outlines=corrected_component_outlines)
 
 @app.route('/remove_busbar', methods=['POST'])
 def remove_busbar():
@@ -310,6 +364,7 @@ def remove_busbar():
     fig_dir = url_for('static', filename='img/Soltech_Logo.png')
 
     # Session retrieval
+    cell_types = session.get('cell_types', {})
     new_string_names = session.get('new_string_names', {})
     sbars = session.get('sbars', [])
     strings = session.get('strings', [])
@@ -320,6 +375,7 @@ def remove_busbar():
     filename = session.get('filename', None)
     corrected_component_placements = session.get('corrected_component_placements', None)
     corrected_component_outlines = session.get('corrected_component_outlines', None)
+    string_metadata = session.get('string_metadata', {})
     logging.info("Route: /remove_busbar - Session data retrieved")
 
     # HTML Parsing
@@ -336,6 +392,12 @@ def remove_busbar():
     sbars = [sbar for sbar in sbars if sbar != sbar_to_delete]
     logging.info("Route: /remove_busbar - Data processed")
 
+    string_metadata = {}
+    for string in strings:
+        outline = corrected_component_outlines[string]
+        dist, cell_type, nr_cells, plus, minus = idf.reverse_engineer_string_outline(outline['coordinates'], cell_types)
+        string_metadata[string] = {'dist': dist, 'cell_type': cell_type, 'nr_cells': nr_cells, 'plus': plus, 'minus': minus}
+
     # Store session data
     session['corrected_component_placements'] = corrected_component_placements
     session['corrected_component_outlines'] = corrected_component_outlines
@@ -344,9 +406,10 @@ def remove_busbar():
     session['w_sbar'] = w_sbar
     session['strings'] = strings
     session['w_string'] = w_string
+    session['string_metadata'] = string_metadata
     logging.info("Route: /remove_busbar - Session data stored")
 
-    return render_template('manipulate.html', manipulate_after_submit_parameters = True, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, w_sbar=w_sbar, w_string=w_string, z_sbar=z_sbar, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
+    return render_template('manipulate.html', string_metadata=string_metadata, manipulate_after_submit_parameters = True, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, w_sbar=w_sbar, w_string=w_string, z_sbar=z_sbar, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
 
 @app.route('/remove_string', methods=['POST'])
 def remove_string():
@@ -354,6 +417,7 @@ def remove_string():
     fig_dir = url_for('static', filename='img/Soltech_Logo.png')
 
     # Session retrieval
+    cell_types = session.get('cell_types', {})
     new_string_names = session.get('new_string_names', {})
     sbars = session.get('sbars', [])
     strings = session.get('strings', [])
@@ -365,6 +429,7 @@ def remove_string():
     corrected_component_placements = session.get('corrected_component_placements', None)
     corrected_component_outlines = session.get('corrected_component_outlines', None)
     w_string_prev = session.get('w_string_prev', {})
+    string_metadata = session.get('string_metadata', {})
     logging.info("Route: /remove_string - Session data retrieved")
 
     # HTML Parsing
@@ -384,14 +449,21 @@ def remove_string():
     del w_string_prev[string_to_delete]
     logging.info("Route: /remove_string - Data processed")
 
+    string_metadata = {}
+    for string in strings:
+        outline = corrected_component_outlines[string]
+        dist, cell_type, nr_cells, plus, minus = idf.reverse_engineer_string_outline(outline['coordinates'], cell_types)
+        string_metadata[string] = {'dist': dist, 'cell_type': cell_type, 'nr_cells': nr_cells, 'plus': plus, 'minus': minus}
+
     # Store session data
+    session['string_metadata'] = string_metadata
     session['corrected_component_placements'] = corrected_component_placements
     session['corrected_component_outlines'] = corrected_component_outlines
     session['strings'] = strings
     session['w_string'] = w_string
     logging.info("Route: /remove_string - Session data stored")
 
-    return render_template('manipulate.html', manipulate_after_submit_parameters = True, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, w_sbar=w_sbar, w_string=w_string, z_sbar=z_sbar, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
+    return render_template('manipulate.html', string_metadata=string_metadata, manipulate_after_submit_parameters = True, strings=strings, graph_json=graph_json, sbars=sbars, filename=filename, new_string_names=new_string_names, w_sbar=w_sbar, w_string=w_string, z_sbar=z_sbar, fig_dir=fig_dir,corrected_component_placements= corrected_component_placements, corrected_component_outlines=corrected_component_outlines)
 
 @app.route('/preview_src')
 def preview_src():
@@ -476,15 +548,15 @@ def generate_busbar_name():
             return jsonify(busbar_name=new_sbar_name, id=new_id)
         index += 1
 
-@app.route('/generate_string_name', methods=['GET'])
-def generate_string_name():
-    print("generate_string_name")
+@app.route('/generate_string_id', methods=['GET'])
+def generate_string_id():
+    print("generate_string_id")
     corrected_component_placements = session.get('corrected_component_placements', {})
     
     str_keys = [key for key in corrected_component_placements.keys() if re.match(r'STR\d{3}', key)]
     
     if not str_keys:
-        return jsonify(string_name='STR000')
+        return jsonify(string_id='STR000')
     
     # Extract the numeric part and find the maximum
     max_num = max(int(key[3:]) for key in str_keys)
@@ -493,7 +565,17 @@ def generate_string_name():
     next_num = max_num + 1
     next_str_key = f'STR{next_num:03}'
     
-    return jsonify(string_name=next_str_key)
+    return jsonify(string_id=next_str_key)
+
+@app.route('/generate_string_name', methods=['GET'])
+def generate_string_name():
+    print("generate_string_name")
+    
+    return jsonify(string_name='String M10 HC 5 Cells 2mm +10mm -10mm')
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(os.getcwd(), 'static'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True, threaded=True)

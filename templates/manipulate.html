@@ -6,7 +6,7 @@
 <h1>Manipulate</h1>
 <form action="/submit_parameters" method="post" enctype="multipart/form-data">
     <div class="row custom-col">
-        <fieldset class="row custom-col border border-2 rounded-0" style="border-color: #ccc">
+        <fieldset class="row custom-col border border-2 rounded-2" style="border-color: #ccc">
             <div class="row custom-col2" style="margin: 0;">
                 <p><strong>Active IDF:</strong></p>
             </div>
@@ -16,39 +16,68 @@
                 {% endif %}
             </div>
         </fieldset>
-        <fieldset class="row custom-col border border-2 rounded-0" style="border-color: #ccc">
+        <fieldset class="row custom-col border border-2 rounded-2" style="border-color: #ccc">
             <legend>Strings</legend>
             <div class="row custom-col2">
-                <div class="col"></div>
-                <div class="col">New Name</div>
-                <div class="col">
-                    <span>Width</span>
+                <div class="col" style="width: 200;"></div>
+                <div class="col" style="width: 150;">New Name</div>
+                <div class="col" style="width: 150;">
+                    <span>Cell Type</span>
                 </div>
-                <div class="col">
-                    <span>Height</span>
+                <div class="col" style="width: 150;">
+                    <span>Nr of Cells</span>
+                </div>
+                <div class="col" style="width: 150;">
+                    <span>Dist</span>
+                </div>
+                <div class="col" style="width: 150;">
+                    <span>+</span>
+                </div>
+                <div class="col" style="width: 150;">
+                    <span>-</span>
                 </div>
                 </div>
                 {% for name, outline in corrected_component_outlines.items() %} 
                 {% if outline.component_type == "string" %}
                 <div class="row custom-col2">
                     <div class="col">
-                        <label for="string_{{ name }}">{{ name }}:</label>
+                        <label for="string_{{ name }}" style="width: 200px;">{{ name }}:</label>
                     </div>
                     <div class="col">
-                        <input type="text" class="form-control" id="string_{{ name }}" name="string_{{ name }}" value="{{ new_string_names.get(name, '') }}">
+                        <input type="text" class="form-control" style="width: 150px;" id="string_{{ name }}" name="string_{{ name }}" value="{{ new_string_names.get(name, '') }}">
                     </div>
                     <div class="col">
-                        <input type="number" class="form-control" name="outline_{{ name }}_0" placeholder="Enter a number" value="{{ outline.widthheight[0][0] }}">
+                        <select class="form-control" style="width: 150px;" id="cell_type_{{ name }}" name="cell_type_{{ name }}">
+                            <option value="M10" {% if string_metadata[name]['cell_type'] == 'M10' %}selected{% endif %}>M10</option>
+                            <option value="M10 HC" {% if string_metadata[name]['cell_type'] == 'M10 HC' %}selected{% endif %}>M10 HC</option>
+                            <option value="G1" {% if string_metadata[name]['cell_type'] == 'G1' %}selected{% endif %}>G1</option>
+                        </select>
                     </div>
                     <div class="col">
-                        <input type="number" class="form-control" name="outline_{{ name }}_1" placeholder="Enter a number" value="{{ outline.widthheight[0][1] }}">
+                        <input type="number" class="form-control" style="width: 150px;" id="nr_of_cells_{{ name }}" name="nr_of_cells_{{ name }}" value="{{ string_metadata[name]['nr_cells'] }}">
+                    </div>
+                    <div class="col">
+                        <input type="number" class="form-control" style="width: 150px;" id="dist_{{ name }}" name="dist_{{ name }}" value="{{ string_metadata[name]['dist'] }}">
+                    </div>
+                    <div class="col">
+                        <input type="number" class="form-control" style="width: 150px;" id="plus_{{ name }}" name="plus_{{ name }}" value="{{ string_metadata[name]['plus'] }}">
+                    </div>
+                    <div class="col">
+                        <input type="number" class="form-control" style="width: 150px;" id="minus_{{ name }}" name="minus_{{ name }}" value="{{ string_metadata[name]['minus'] }}">
                     </div>
                 </div>
                 {% endif %}
                 {% endfor %}
+                <div class="row mb-2" id="existing-rows3"></div>
+                <div class="col">
+                    <button type="button" style="width: 500px;" class="btn btn-secondary" id="add-row-btn3">Add</button>
+                </div>
                 <div class="row custom-col2">
                     <div class="col"></div>
                     <div class="col"></div>
+                    <div class="col">
+                        <span>String</span>
+                    </div>
                     <div class="col">
                         <span>W</span>
                     </div>
@@ -75,7 +104,16 @@
                     </div>
                     
                     <div class="col">
-                        <label for="string_{{ id }}">{{ id }}:</label>
+                        <label for="string_{{ id }}" style="width: 220px;">{{ id }}:</label>
+                    </div>
+                    <div class="col">
+                        <select class="form-control" style="width: 100px;" id="name_{{ id }}" name="name_{{ id }}">
+                            {% for name, outline in corrected_component_outlines.items() %} 
+                            {% if outline.component_type == "string" %}
+                            <option value="{{ name }}" {% if name == placement.name %}selected{% endif %}>{{ name }}</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="col">
                         <select id="string180deg_{{ id }}" name="string180deg_{{ id }}">
@@ -86,13 +124,13 @@
                         </select>
                     </div>
                     <div class="col">
-                        <input type="number" class="form-control" name="placement_{{ id }}_0" placeholder="Enter a number" value="{{ placement.placement[0] }}">
+                        <input type="number" class="form-control" style="width: 150px;" name="placement_{{ id }}_0" placeholder="Enter a number" value="{{ placement.placement[0] }}">
                     </div>
                     <div class="col">
-                        <input type="number" class="form-control" name="placement_{{ id }}_1" placeholder="Enter a number" value="{{ placement.placement[1] }}">
+                        <input type="number" class="form-control" style="width: 150px;" name="placement_{{ id }}_1" placeholder="Enter a number" value="{{ placement.placement[1] }}">
                     </div>
                     <div class="col">
-                        <input type="number" class="form-control" name="placement_{{ id }}_2" placeholder="Enter a number" value="{{ placement.placement[2] }}">
+                        <input type="number" class="form-control" style="width: 150px;" name="placement_{{ id }}_2" placeholder="Enter a number" value="{{ placement.placement[2] }}">
                     </div>
                 </div>
                 {% endif %}
@@ -104,7 +142,7 @@
             </div>
             <div class="row mb-2" id="existing-rows"></div>
         </fieldset>
-        <fieldset class="row custom-col border border-2 rounded-0" style="border-color: #ccc">
+        <fieldset class="row custom-col border border-2 rounded-2" style="border-color: #ccc">
             <legend>Busbars</legend>
             <div class="row">
                 <div class="col"></div>
