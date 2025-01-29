@@ -83,7 +83,8 @@ def component_outlines(file_path):
                 name = parts[1].strip()
                 component_type = parts[3].strip()
                 height = parts[-1].strip().split()[-1]
-                current_component = {name: {'component_type': component_type, 'height': height, 'coordinates': [], "widthheight": []}}
+                current_component = {name: {'component_type': component_type, 'height': height, 'coordinates': []}}
+                coordinates = []
                 component_outlines.update(current_component)
                 in_mechanical_section = False
                 continue
@@ -94,9 +95,8 @@ def component_outlines(file_path):
                 parts = line.split()
                 if len(parts) == 4:
                     component_name = list(current_component.keys())[0]
-                    component_outlines[component_name]['coordinates'].append([float(parts[1]), float(parts[2]), float(parts[3])])
-    for name, outline in component_outlines.items():
-        outline['widthheight'].append([outline['coordinates'][0][0], most_common_value([coordinate[1] for coordinate in outline['coordinates']])])
+                    coordinates.append([float(parts[1]), float(parts[2]), float(parts[3])])
+                    component_outlines[component_name]['coordinates'] = np.array(coordinates)
     return component_outlines
     
 def get_component_names_by_type(component_outlines):
@@ -173,7 +173,7 @@ def draw_board(board_outline, component_outlines, component_placements):
 
     return fig
 
-def translate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_string_prev, form_data, widthheight_prev):
+def translate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_string_prev, form_data):
     for id, placement in corrected_component_placements.items():
         if placement['component_type'] == 'busbar':
             if w_sbar_prev[placement["name"]][-1] == w_sbar_prev[placement["name"]][-2]:
@@ -182,6 +182,7 @@ def translate(corrected_component_placements, corrected_component_outlines, w_sb
                 placement['placement'][2] = float(form_data.get(f'placement_{id}_2', placement['placement'][2]))
         elif placement['component_type'] == 'string':
             placement['name'] = form_data.get(f'name_{id}', placement['name'])
+            print(placement['name'])
             if w_string_prev[id][-1] == w_string_prev[id][-2] or len(w_string_prev[id]) == 1:
                 placement['placement'][0] = float(form_data.get(f'placement_{id}_0', placement['placement'][0]))
                 placement['placement'][1] = float(form_data.get(f'placement_{id}_1', placement['placement'][1]))
@@ -190,17 +191,17 @@ def translate(corrected_component_placements, corrected_component_outlines, w_sb
     for name, outline in corrected_component_outlines.items():
         if outline['component_type'] == 'busbar':
             if w_sbar_prev[name][-1] == w_sbar_prev[name][-2]:
-                outline['coordinates'][2][0] = float(form_data.get(f'outline_{name}_0', outline['coordinates'][2][0]))
-                outline['coordinates'][1][0] = float(form_data.get(f'outline_{name}_0', outline['coordinates'][2][0]))
-                outline['coordinates'][2][1] = float(form_data.get(f'outline_{name}_1', outline['coordinates'][2][1]))
-                outline['coordinates'][3][1] = float(form_data.get(f'outline_{name}_1', outline['coordinates'][2][1]))
+                outline['coordinates'][2, 0] = float(form_data.get(f'outline_{name}_0', outline['coordinates'][2, 0]))
+                outline['coordinates'][1, 0] = float(form_data.get(f'outline_{name}_0', outline['coordinates'][2, 0]))
+                outline['coordinates'][2, 1] = float(form_data.get(f'outline_{name}_1', outline['coordinates'][2, 1]))
+                outline['coordinates'][3, 1] = float(form_data.get(f'outline_{name}_1', outline['coordinates'][2, 1]))
     return
 
-def rotate0to180(id, corrected_component_placements, corrected_component_outlines):
+def rotate0to180(id, corrected_component_placements, corrected_component_outlines, string_metadata, cell_types):
     outline = corrected_component_outlines[corrected_component_placements[id]['name']]['coordinates']
     if corrected_component_placements[id]['component_type'] == "string":
-        component_long_side = corrected_component_outlines[corrected_component_placements[id]['name']]['widthheight'][0][0]
-        component_short_side = corrected_component_outlines[corrected_component_placements[id]['name']]['widthheight'][0][1]
+        component_long_side = cell_types[string_metadata[corrected_component_placements[id]['name']]['cell_type']][1]
+        component_short_side = string_metadata[corrected_component_placements[id]['name']]['nr_cells'] * cell_types[string_metadata[corrected_component_placements[id]['name']]['cell_type']][0] + (string_metadata[corrected_component_placements[id]['name']]['nr_cells']-1) * string_metadata[corrected_component_placements[id]['name']]['dist']
     else:
         component_long_side = np.max(outline)
         component_short_side = 5
@@ -219,11 +220,11 @@ def rotate0to180(id, corrected_component_placements, corrected_component_outline
     corrected_component_placements[id]['placement'][3] = (corrected_component_placements[id]['placement'][3] + 180) % 360
     return
 
-def rotate180to0(id, corrected_component_placements, corrected_component_outlines):
+def rotate180to0(id, corrected_component_placements, corrected_component_outlines, string_metadata, cell_types):
     outline = corrected_component_outlines[corrected_component_placements[id]['name']]['coordinates']
     if corrected_component_placements[id]['component_type'] == "string":
-        component_long_side = corrected_component_outlines[corrected_component_placements[id]['name']]['widthheight'][0][0]
-        component_short_side = corrected_component_outlines[corrected_component_placements[id]['name']]['widthheight'][0][1]
+        component_long_side = cell_types[string_metadata[corrected_component_placements[id]['name']]['cell_type']][1]
+        component_short_side = string_metadata[corrected_component_placements[id]['name']]['nr_cells'] * cell_types[string_metadata[corrected_component_placements[id]['name']]['cell_type']][0] + (string_metadata[corrected_component_placements[id]['name']]['nr_cells']-1) * string_metadata[corrected_component_placements[id]['name']]['dist']
     else:
         component_long_side = np.max(outline)
         component_short_side = 5
@@ -242,16 +243,16 @@ def rotate180to0(id, corrected_component_placements, corrected_component_outline
     corrected_component_placements[id]['placement'][3] = (corrected_component_placements[id]['placement'][3] - 180) % 360
     return
 
-def rotate_to_zero(corrected_component_placements, corrected_component_outlines, id, prev_angle):
+def rotate_to_zero(corrected_component_placements, corrected_component_outlines, id, prev_angle, string_metadata, cell_types):
     if prev_angle == 90:
         corrected_component_placements[id]['placement'][3] -= 90
     elif prev_angle == 180:
-        rotate180to0(id, corrected_component_placements, corrected_component_outlines)
+        rotate180to0(id, corrected_component_placements, corrected_component_outlines, string_metadata, cell_types)
     elif prev_angle == 270:
-        rotate180to0(id, corrected_component_placements, corrected_component_outlines)
+        rotate180to0(id, corrected_component_placements, corrected_component_outlines, string_metadata, cell_types)
         corrected_component_placements[id]['placement'][3] -= 90
 
-def rotate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_sbar, w_string_prev, w_string):
+def rotate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_sbar, w_string_prev, w_string, string_metadata, cell_types):
     for id, component_placement in corrected_component_placements.items():
         for sbar, _ in w_sbar.items():
             if sbar == component_placement['name']:
@@ -259,31 +260,31 @@ def rotate(corrected_component_placements, corrected_component_outlines, w_sbar_
                 current_angle = w_sbar[sbar]
                 if prev_angle != current_angle:
                     # Rotate back to 0
-                    rotate_to_zero(corrected_component_placements, corrected_component_outlines, id, prev_angle)
+                    rotate_to_zero(corrected_component_placements, corrected_component_outlines, id, prev_angle, string_metadata, cell_types)
                     
                     # Rotate to the current angle
                     if current_angle == 90:
                         corrected_component_placements[id]['placement'][3] += 90
                     elif current_angle == 180:
-                        rotate0to180(id, corrected_component_placements, corrected_component_outlines)
+                        rotate0to180(id, corrected_component_placements, corrected_component_outlines, string_metadata, cell_types)
                     elif current_angle == 270:
                         corrected_component_placements[id]['placement'][3] += 90
-                        rotate0to180(id, corrected_component_placements, corrected_component_outlines)
+                        rotate0to180(id, corrected_component_placements, corrected_component_outlines, string_metadata, cell_types)
     for id, _ in w_string.items():
         prev_angle = w_string_prev[id][0]
         current_angle = w_string[id]
         if prev_angle != current_angle:
             # Rotate back to 0
-            rotate_to_zero(corrected_component_placements, corrected_component_outlines, id, prev_angle)
+            rotate_to_zero(corrected_component_placements, corrected_component_outlines, id, prev_angle, string_metadata, cell_types)
             
             # Rotate to the current angle
             if current_angle == 90:
                 corrected_component_placements[id]['placement'][3] += 90
             elif current_angle == 180:
-                rotate0to180(id, corrected_component_placements, corrected_component_outlines)
+                rotate0to180(id, corrected_component_placements, corrected_component_outlines, string_metadata, cell_types)
             elif current_angle == 270:
                 corrected_component_placements[id]['placement'][3] += 90
-                rotate0to180(id, corrected_component_placements, corrected_component_outlines)
+                rotate0to180(id, corrected_component_placements, corrected_component_outlines, string_metadata, cell_types)
     return
 
 def regenerate_idf_file_content(file_path, corrected_component_outlines, corrected_component_placements):
@@ -369,7 +370,7 @@ def add_busbar(corrected_component_outlines, corrected_component_placements, w_s
     new_index = max_index + 1
     new_id = f'BB{new_index:03}'
 
-    corrected_component_outlines[new_sbar_name] = {'component_type': 'busbar', 'height': new_sbarheight, 'coordinates': outline}
+    corrected_component_outlines[new_sbar_name] = {'component_type': 'busbar', 'height': new_sbarheight, 'coordinates': np.array(outline)}
     corrected_component_placements[new_id] = {'name': new_sbar_name, 'component_type': 'busbar', 'placement': placement}
     w_sbar[new_sbar_name] = new_sbar180deg
     z_sbar[new_sbar_name] = new_sbarheight
@@ -450,9 +451,9 @@ def generate_string_outline(cell_type, nr_cells, dist, plus, minus, corrected_co
 
     outline = np.array(outline)
 
-    outline = np.around(outline, decimals=1)
+    outline = np.around(outline, decimals=3)
 
-    corrected_component_outlines[cell_name] = {'component_type': 'string', 'height': '1', 'widthheight': [cell_types[cell_type][0], cell_types[cell_type][1]], 'coordinates': outline}
+    corrected_component_outlines[cell_name] = {'component_type': 'string', 'height': '1', 'coordinates': outline}
     
     return
 
@@ -489,12 +490,6 @@ def reverse_engineer_string_outline(outline, cell_types):
     calculated_nr_cells = count_nr_cells(outline[:, 0], cell_types[calculated_cell_type][0], cell_types[calculated_cell_type][0]-cell_types[calculated_cell_type][3])
 
     calculated_plus = float(np.max(outline.flatten()) - (calculated_nr_cells * cell_types[calculated_cell_type][1] + (calculated_nr_cells-1)*calculated_dist))
-
-    print('Calculated dist: ', calculated_dist)
-    print('Calculated cell type: ', calculated_cell_type)
-    print('Calculated nr cells: ', calculated_nr_cells)
-    print('Calculated plus: ', calculated_plus)
-    print('Calculated minus: ', calculated_minus)
 
     return calculated_dist, calculated_cell_type, calculated_nr_cells, calculated_plus, calculated_minus
 

@@ -114,11 +114,6 @@ def submit_file():
             w_string_prev[id] = []
         w_string_prev[id].append(value)
 
-    widthheight_prev = {}
-    for name, outline in corrected_component_outlines.items():
-        if outline['component_type'] == 'string':
-            widthheight_prev[name] = outline['widthheight']
-
     if new_string_names is None:
         new_string_names = {string: '' for string in strings}
 
@@ -137,7 +132,6 @@ def submit_file():
     session['string_metadata'] = string_metadata
     session['cell_types'] = cell_types
     session['file_content'] = file_content
-    session['widthheight_prev'] = widthheight_prev
     session['graph_json'] = graph_json
     session['board_outline'] = board_outline
     session['component_outlines'] = component_outlines
@@ -172,7 +166,6 @@ def submit_parameters():
     w_string = session.get('w_string', {})
     z_sbar = session.get('z_sbar', {sbar: False for sbar in sbars})
     w_sbar = session.get('w_sbar', {sbar: 0.0 for sbar in sbars})
-    widthheight_prev = session.get('widthheight_prev', {string: [0, 0] for string in strings})
     cell_types = session.get('cell_types', {})
     logging.info("Route: /submit_parameters - Session data retrieved")
 
@@ -201,6 +194,30 @@ def submit_parameters():
         minus = float(request.form.get('minus', 10.0))
         idf.generate_string_outline(cell_type, nr_cells, dist, plus, minus, corrected_component_outlines, cell_name, cell_types)
 
+    
+    for id, placement in corrected_component_placements.items():
+        placement['name'] == request.form.get(f'name_{id}', placement['name'])
+
+    
+    for string in strings:
+        if request.form.get(f'nr_of_cells_{string}') != "" and request.form.get(f'dist_{string}') != "" and request.form.get(f'plus_{string}') != "" and request.form.get(f'minus_{string}') != "":
+            del corrected_component_outlines[string]
+
+            cell_type = request.form.get(f'cell_type_{string}', "M10 HC")
+            nr_cells = int(float(request.form.get(f'nr_of_cells_{string}', 5)))
+            dist = float(request.form.get(f'dist_{string}', 2.0))
+            plus = float(request.form.get(f'plus_{string}', 10.0))
+            minus = float(request.form.get(f'minus_{string}', 10.0))
+            if request.form.get(f'string_{string}', None) is None or request.form.get(f'string_{string}', None) == "":
+                cell_name = f"String {cell_type} {nr_cells} Cells {int(dist)}mm +{int(plus)}mm -{int(minus)}mm"
+            else:
+                cell_name = request.form.get(f'string_{string}')
+            idf.generate_string_outline(cell_type, nr_cells, dist, plus, minus, corrected_component_outlines, cell_name, cell_types)
+            for id, placement in corrected_component_placements.items():
+                if placement["name"] == string:
+                    placement['name'] = cell_name
+            strings = [name for name, _ in corrected_component_outlines.items() if name.startswith('String')]
+
     for sbar, value in w_sbar.items():
         if sbar not in w_sbar_prev:
             w_sbar_prev[sbar] = []
@@ -216,52 +233,18 @@ def submit_parameters():
         if len(w_string_prev[string]) > 2:
             w_string_prev[string].pop(0)
 
-    for name, component in corrected_component_outlines.items():
-        if component['component_type'] == 'string':
-            if request.form.get(f'outline_{name}_0', None) is None or request.form.get(f'outline_{name}_1', None) is None:
-                widthheight = [1000.00, 182.00]
-            else:
-                widthheight = [float(request.form.get(f'outline_{name}_0', None)), float(request.form.get(f'outline_{name}_1', None))]
-            if name not in widthheight_prev:
-                widthheight_prev[name] = []
-                widthheight_prev[name].append(widthheight)
-            else:
-                widthheight_prev[name].append(widthheight)
-            if len(widthheight_prev[name]) > 2:
-                widthheight_prev[name].pop(0)
+    string_metadata = {}
+    for string in strings:
+        outline = corrected_component_outlines[string]
+        dist, cell_type, nr_cells, plus, minus = idf.reverse_engineer_string_outline(outline['coordinates'], cell_types)
+        string_metadata[string] = {'dist': dist, 'cell_type': cell_type, 'nr_cells': nr_cells, 'plus': plus, 'minus': minus}
 
-    
-    for id, placement in corrected_component_placements.items():
-        placement['name'] == request.form.get(f'name_{id}', placement['name'])
-
-    idf.translate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_string_prev, request.form, widthheight_prev=widthheight_prev)
-    idf.rotate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_sbar, w_string_prev, w_string)
+    idf.translate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_string_prev, request.form)
+    idf.rotate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_sbar, w_string_prev, w_string, string_metadata, cell_types)
 
     idf.change_string_names(corrected_component_placements, corrected_component_outlines, new_string_names, strings)
     idf.change_sbar_height(corrected_component_outlines, z_sbar)
 
-    
-    for string in strings:
-        print(string)
-        if request.form.get(f'nr_of_cells_{string}') != "" and request.form.get(f'dist_{string}') != "" and request.form.get(f'plus_{string}') != "" and request.form.get(f'minus_{string}') != "":
-            cell_type = request.form.get(f'cell_type_{string}', "M10 HC")
-            nr_cells = int(float(request.form.get(f'nr_of_cells_{string}', 5)))
-            dist = float(request.form.get(f'dist_{string}', 2.0))
-            plus = float(request.form.get(f'plus_{string}', 10.0))
-            minus = float(request.form.get(f'minus_{string}', 10.0))
-            if request.form.get(f'string_{string}', None) is None or request.form.get(f'string_{string}', None) == "":
-                cell_name = f"String {cell_type} {nr_cells} Cells {int(dist)}mm +{int(plus)}mm -{int(minus)}mm"
-            else:
-                cell_name = request.form.get(f'string_{string}')
-            idf.generate_string_outline(cell_type, nr_cells, dist, plus, minus, corrected_component_outlines, cell_name, cell_types)
-            for id, placement in corrected_component_placements.items():
-                if placement["name"] == string:
-                    placement['name'] = cell_name
-                    break
-            corrected_component_outlines[cell_name] = corrected_component_outlines.pop(string)
-            strings = [name for name, _ in corrected_component_outlines.items() if name.startswith('String')]
-
-    
     for sbar in sbars:
         id = [id for id, placement in corrected_component_placements.items() if placement["name"] == sbar][0]
         w_sbar[sbar] = corrected_component_placements[id]['placement'][3]
@@ -270,22 +253,10 @@ def submit_parameters():
         if placement["component_type"] == "string":
             w_string[id] = corrected_component_placements[id]['placement'][3]
 
-    for name, component in corrected_component_outlines.items():
-        if component['component_type'] == 'string':
-            widthheight_prev[name] = component['widthheight']
-            if len(widthheight_prev[name]) > 2:
-                widthheight_prev[name].pop(0)
-
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     new_file_content = idf.regenerate_idf_file_content(file_path, corrected_component_outlines, corrected_component_placements)
     logging.info("Route: /submit_parameters - Data processed")
-
-    string_metadata = {}
-    for string in strings:
-        outline = corrected_component_outlines[string]
-        dist, cell_type, nr_cells, plus, minus = idf.reverse_engineer_string_outline(outline['coordinates'], cell_types)
-        string_metadata[string] = {'dist': dist, 'cell_type': cell_type, 'nr_cells': nr_cells, 'plus': plus, 'minus': minus}
-
+    
     # Store session data
     session['string_metadata'] = string_metadata
     session['new_file_content'] = new_file_content
@@ -293,7 +264,6 @@ def submit_parameters():
     session['corrected_component_placements'] = corrected_component_placements
     session['corrected_component_outlines'] = corrected_component_outlines
     session['w_sbar'] = w_sbar
-    session['widthheight_prev'] = widthheight_prev
     session['w_string'] = w_string
     session['z_sbar'] = z_sbar
     session['w_sbar_prev'] = w_sbar_prev
