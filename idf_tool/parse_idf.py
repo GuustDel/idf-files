@@ -182,7 +182,6 @@ def translate(corrected_component_placements, corrected_component_outlines, w_sb
                 placement['placement'][2] = float(form_data.get(f'placement_{id}_2', placement['placement'][2]))
         elif placement['component_type'] == 'string':
             placement['name'] = form_data.get(f'name_{id}', placement['name'])
-            print(placement['name'])
             if w_string_prev[id][-1] == w_string_prev[id][-2] or len(w_string_prev[id]) == 1:
                 placement['placement'][0] = float(form_data.get(f'placement_{id}_0', placement['placement'][0]))
                 placement['placement'][1] = float(form_data.get(f'placement_{id}_1', placement['placement'][1]))
@@ -407,7 +406,36 @@ def change_string_names(corrected_component_placements, corrected_component_outl
                 strings[strings.index(string_name)] = new_string_name
     return
 
-def generate_string_outline(cell_type, nr_cells, dist, plus, minus, corrected_component_outlines, cell_name, cell_types):
+def insert_at_index(d, key, value, index):
+    """
+    Insert a key-value pair at a specific index in a dictionary.
+    
+    :param d: The original dictionary
+    :param key: The key to insert
+    :param value: The value to insert
+    :param index: The index at which to insert the key-value pair
+    :return: A new dictionary with the key-value pair inserted at the specified index
+    """
+    new_dict = {}
+    
+    if index is None:
+        index = 999
+    print(index)
+
+    for i, (k, v) in enumerate(d.items()):
+        if i == index:
+            new_dict[key] = value
+        new_dict[k] = v
+    
+    
+    if index >= len(d):
+        new_dict[key] = value
+    # print(new_dict)
+    
+    return new_dict
+
+
+def generate_string_outline(cell_type, nr_cells, dist, plus, minus, corrected_component_outlines, cell_name, cell_types, index):
     outline = []
     outline.append([cell_types[cell_type][0], 0, 0])
     for i in range(nr_cells-1):
@@ -452,10 +480,9 @@ def generate_string_outline(cell_type, nr_cells, dist, plus, minus, corrected_co
     outline = np.array(outline)
 
     outline = np.around(outline, decimals=3)
-
-    corrected_component_outlines[cell_name] = {'component_type': 'string', 'height': '1', 'coordinates': outline}
-    
-    return
+    new_dict = insert_at_index(corrected_component_outlines, cell_name, {'component_type': 'string', 'height': '1', 'coordinates': outline}, index)
+    corrected_component_outlines = new_dict
+    return corrected_component_outlines
 
 def reverse_engineer_string_outline(outline, cell_types):
 

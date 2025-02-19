@@ -37,8 +37,7 @@
                     <span>-</span>
                 </div>
                 </div>
-                {% for name, outline in corrected_component_outlines.items() %} 
-                {% if outline.component_type == "string" %}
+                {% for name, metadata in string_metadata.items() %} 
                 <div class="row custom-col2">
                     <div class="col">
                         <label for="string_{{ name }}" style="width: 200px;">{{ name }}:</label>
@@ -48,25 +47,24 @@
                     </div>
                     <div class="col">
                         <select class="form-control" style="width: 150px;" id="cell_type_{{ name }}" name="cell_type_{{ name }}">
-                            <option value="M10" {% if string_metadata[name]['cell_type'] == 'M10' %}selected{% endif %}>M10</option>
-                            <option value="M10 HC" {% if string_metadata[name]['cell_type'] == 'M10 HC' %}selected{% endif %}>M10 HC</option>
-                            <option value="G1" {% if string_metadata[name]['cell_type'] == 'G1' %}selected{% endif %}>G1</option>
+                            <option value="M10" {% if metadata['cell_type'] == 'M10' %}selected{% endif %}>M10</option>
+                            <option value="M10 HC" {% if metadata['cell_type'] == 'M10 HC' %}selected{% endif %}>M10 HC</option>
+                            <option value="G1" {% if metadata['cell_type'] == 'G1' %}selected{% endif %}>G1</option>
                         </select>
                     </div>
                     <div class="col">
-                        <input type="number" class="form-control" style="width: 150px;" id="nr_of_cells_{{ name }}" name="nr_of_cells_{{ name }}" value="{{ string_metadata[name]['nr_cells'] }}">
+                        <input type="number" class="form-control" style="width: 150px;" id="nr_of_cells_{{ name }}" name="nr_of_cells_{{ name }}" value="{{ metadata['nr_cells'] }}">
                     </div>
                     <div class="col">
-                        <input type="number" class="form-control" style="width: 150px;" id="dist_{{ name }}" name="dist_{{ name }}" value="{{ string_metadata[name]['dist'] }}">
+                        <input type="number" class="form-control" style="width: 150px;" id="dist_{{ name }}" name="dist_{{ name }}" value="{{ metadata['dist'] }}">
                     </div>
                     <div class="col">
-                        <input type="number" class="form-control" style="width: 150px;" id="plus_{{ name }}" name="plus_{{ name }}" value="{{ string_metadata[name]['plus'] }}">
+                        <input type="number" class="form-control" style="width: 150px;" id="plus_{{ name }}" name="plus_{{ name }}" value="{{ metadata['plus'] }}">
                     </div>
                     <div class="col">
-                        <input type="number" class="form-control" style="width: 150px;" id="minus_{{ name }}" name="minus_{{ name }}" value="{{ string_metadata[name]['minus'] }}">
+                        <input type="number" class="form-control" style="width: 150px;" id="minus_{{ name }}" name="minus_{{ name }}" value="{{ metadata['minus'] }}">
                     </div>
                 </div>
-                {% endif %}
                 {% endfor %}
                 <div class="row mb-2" id="existing-rows3"></div>
                 <div class="col">

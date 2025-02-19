@@ -14,11 +14,19 @@ import plotly
 from werkzeug.utils import secure_filename
 import numpy as np
 
-app = Flask(
-    __name__,
-    template_folder=os.path.join(os.path.dirname(__file__), '..', 'templates'),
-    static_folder=os.path.join(os.path.dirname(__file__), '..', 'static')
-    )
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller. """
+    try:
+        # PyInstaller creates a temporary folder and stores path in _MEIPASS.
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+# Tell Flask where to find the templates and static folders.
+app = Flask(__name__,
+            template_folder=resource_path('templates'),
+            static_folder=resource_path('static'))
 app.secret_key = 'supersecretkey'
 
 app.config.update(
@@ -27,8 +35,8 @@ app.config.update(
 )
 
 app.config['SESSION_TYPE'] = 'filesystem'
-app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), "uploads")
-app.config['EXPORT_FOLDER'] = os.path.join(os.getcwd(), "submits")
+app.config['UPLOAD_FOLDER'] = resource_path("uploads")
+app.config['EXPORT_FOLDER'] = resource_path("submits")
 app.config['MAX_CONTENT_LENGTH'] = 15 * 1024 * 1024  # 15MB max file size
 app.config['ALLOWED_EXTENSIONS'] = {'idf'}
 
@@ -192,14 +200,14 @@ def submit_parameters():
         dist = float(request.form.get('dist', 2.0))
         plus = float(request.form.get('plus', 10.0))
         minus = float(request.form.get('minus', 10.0))
-        idf.generate_string_outline(cell_type, nr_cells, dist, plus, minus, corrected_component_outlines, cell_name, cell_types)
+        corrected_component_outlines = idf.generate_string_outline(cell_type, nr_cells, dist, plus, minus, corrected_component_outlines, cell_name, cell_types, None)
+        print("0", corrected_component_outlines)
 
     
     for id, placement in corrected_component_placements.items():
         placement['name'] == request.form.get(f'name_{id}', placement['name'])
-
     
-    for string in strings:
+    for i, string in enumerate(strings):
         if request.form.get(f'nr_of_cells_{string}') != "" and request.form.get(f'dist_{string}') != "" and request.form.get(f'plus_{string}') != "" and request.form.get(f'minus_{string}') != "":
             del corrected_component_outlines[string]
 
@@ -212,11 +220,12 @@ def submit_parameters():
                 cell_name = f"String {cell_type} {nr_cells} Cells {int(dist)}mm +{int(plus)}mm -{int(minus)}mm"
             else:
                 cell_name = request.form.get(f'string_{string}')
-            idf.generate_string_outline(cell_type, nr_cells, dist, plus, minus, corrected_component_outlines, cell_name, cell_types)
+            corrected_component_outlines = idf.generate_string_outline(cell_type, nr_cells, dist, plus, minus, corrected_component_outlines, cell_name, cell_types, len(sbars) + i)
             for id, placement in corrected_component_placements.items():
                 if placement["name"] == string:
                     placement['name'] = cell_name
             strings = [name for name, _ in corrected_component_outlines.items() if name.startswith('String')]
+            
 
     for sbar, value in w_sbar.items():
         if sbar not in w_sbar_prev:
@@ -238,6 +247,7 @@ def submit_parameters():
         outline = corrected_component_outlines[string]
         dist, cell_type, nr_cells, plus, minus = idf.reverse_engineer_string_outline(outline['coordinates'], cell_types)
         string_metadata[string] = {'dist': dist, 'cell_type': cell_type, 'nr_cells': nr_cells, 'plus': plus, 'minus': minus}
+        
 
     idf.translate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_string_prev, request.form)
     idf.rotate(corrected_component_placements, corrected_component_outlines, w_sbar_prev, w_sbar, w_string_prev, w_string, string_metadata, cell_types)
@@ -548,4 +558,5 @@ def favicon():
     return send_from_directory(os.path.join(os.getcwd(), 'static'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 if __name__ == '__main__':
-    app.run(port=5000, debug=True, threaded=True)
+    webbrowser.open("http://127.0.0.1:5000")
+    app.run(port=5000)
